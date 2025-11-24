@@ -1,0 +1,26 @@
+# C++ Build Conculsion Folders 
+[Dd]ebug/
+[Rr]elease/
+[Dd]ebug_*/
+[Rr]elease_*/
+x64/
+x86/
+
+# Build Files 
+*.obj
+*.exe
+*.lib
+*.pdb
+*.ilk
+*.log
+*.tlog
+*.recipe
+*.lastbuildstate
+*.pch
+
+# VS Related Files 
+.vs/
+*.suo
+*.user
+*.VC.db
+*.VC.VC.opendb
