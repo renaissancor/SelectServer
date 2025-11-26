@@ -185,24 +185,21 @@ void Network::RecvData() noexcept {
 void Network::HandlePacket() noexcept {
 	const size_t PACKET_HEADER_SIZE = sizeof(PacketHeader); // Example header size 
 	const size_t PACKET_PAYLOAD_SIZE = sizeof(PacketPayload);
+	const size_t PACKET_SIZE = PACKET_HEADER_SIZE + PACKET_PAYLOAD_SIZE; 
 
 	while (true) {
 		if(_bufferRecv.GetUsedSize() < PACKET_HEADER_SIZE) break;
-		PacketHeader header = { 0 };
-		_bufferRecv.Peek((char*)&header, PACKET_HEADER_SIZE);
 
-		unsigned short packetLen = header.len;
+		PacketHeader header = { 0 }; 
 
-		if (packetLen < PACKET_PAYLOAD_SIZE) {
-			// fwprintf_s(stderr, L"Invalid packet length: %u\n", packetLen);
-			_bufferRecv.ClearBuffer(); // buffer is not enough for one packet, clear it 
-			break;
-		}
-
-		if (_bufferRecv.GetUsedSize() < packetLen) break;
+		int peekHeaderSize = _bufferRecv.Peek((char*)&header, PACKET_HEADER_SIZE);
+		if (peekHeaderSize != PACKET_HEADER_SIZE) break; 
 
 		Packet packet = { 0 };
-		_bufferRecv.Dequeue(reinterpret_cast<char*>(&packet), packetLen);
+		int peekPayloadSize = _bufferRecv.Peek((char*)&packet, PACKET_PAYLOAD_SIZE);
+		if (peekPayloadSize != PACKET_PAYLOAD_SIZE) break; 
+
+		_bufferRecv.Dequeue((char*)&packet, PACKET_SIZE); 
 
 		int ax = packet.payload.ax;
 		int ay = packet.payload.ay;
@@ -212,7 +209,6 @@ void Network::HandlePacket() noexcept {
 		fwprintf_s(stdout, L"Received DRAW: (%d, %d) -> (%d, %d)\n", ax, ay, bx, by); 
 		WindowMain::GetInstance().EnqueueLineToDraw(ax, ay, bx, by);
 	}
-
 }
 
 
