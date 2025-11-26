@@ -43,8 +43,8 @@ bool TCP::Manager::Initialize() noexcept {
 		return Helper();
 
 	linger so_linger = { 0, };
-	so_linger.l_onoff = 1;
-	so_linger.l_linger = 0;
+	so_linger.l_onoff = 1; // Enable linger option, end by RST 
+	so_linger.l_linger = 0; 
 	_setsockoptLingerResult = ::setsockopt(_hListenSocket, SOL_SOCKET, SO_LINGER, (char*)&so_linger, sizeof(so_linger));
 	if (_setsockoptLingerResult == SOCKET_ERROR)
 		return Helper();
