@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{c3ac4987-7486-495f-8a29-2922d53af36f}</ProjectGuid>
-    <RootNamespace>DrawClient</RootNamespace>
+    <ProjectGuid>{25c55a18-f9ed-4284-b406-4d0b3d3ecf32}</ProjectGuid>
+    <RootNamespace>FighterServer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -123,24 +123,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Engine.h" />
-    <ClInclude Include="Enumerator.h" />
-    <ClInclude Include="Network.h" />
-    <ClInclude Include="Protocol.h" />
-    <ClInclude Include="RingBuffer.h" />
-    <ClInclude Include="WindowMain.h" />
-    <ClInclude Include="stdafx.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Network.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
-    <ClCompile Include="WindowMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Readme.md" />
-    <None Include="ring_buffer.md" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Client.h" />
+    <ClInclude Include="Engine.h" />
+    <ClInclude Include="Protocol.h" />
+    <ClInclude Include="PacketDefine.h" />
+    <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="WinAtomic.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

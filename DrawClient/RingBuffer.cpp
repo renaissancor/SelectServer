@@ -8,12 +8,26 @@ RingBuffer::RingBuffer(int capacity) :
 {
 }
 
-RingBuffer::~RingBuffer() {
+RingBuffer::~RingBuffer() 
+{
 	delete[] _buffer;
 }
 
+void RingBuffer::ResizeBuffer(const int newCapacity) noexcept {
+	if (newCapacity <= _capacity) return;
+	char* newBuffer = new char[newCapacity];
+	int usedSize = GetUsedSize();
+	Peek(newBuffer, usedSize);
+	delete[] _buffer;
+	_buffer = newBuffer;
+	_capacity = newCapacity;
+	_head = 0;
+	_tail = usedSize;
+	fwprintf_s(stdout, L"RingBuffer resized to %d bytes.\n", newCapacity); 
+}
+
 int RingBuffer::Enqueue(const char* src, int size) noexcept {
-	if (size > GetFreeSize()) size = GetFreeSize();
+	if (size > GetFreeSize()) ResizeBuffer(_capacity + size); 
 	int firstChunk = min(size, _capacity - _tail);
 	memcpy_s(_buffer + _tail, _capacity - _tail, src, firstChunk);
 	int remaining = size - firstChunk;
@@ -32,6 +46,7 @@ int RingBuffer::Enqueue(const char* src, int size) noexcept {
 
 int RingBuffer::Dequeue(char* dst, int size) noexcept {
 	if (size > GetUsedSize()) size = GetUsedSize();
+
 	int firstChunk = min(size, _capacity - _head);
 	memcpy_s(dst, size, _buffer + _head, firstChunk);
 	int remaining = size - firstChunk;

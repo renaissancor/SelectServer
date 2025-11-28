@@ -31,9 +31,6 @@ void Engine::Update() noexcept {
 	network.HandlePacket(); 
 
 	network.SendData(); 
-		
-
-
 }
 
 void Engine::Render() const noexcept {

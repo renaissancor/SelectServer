@@ -128,7 +128,7 @@ void Network::ProcessWSA(WPARAM wParam, LPARAM lParam) noexcept {
 		_results._isConnectedToServer = 1;
 		break;
 	case FD_READ:
-		fwprintf_s(stdout, L"FD_READ event received.\n");
+		fwprintf_s(stdout, L"FD_READ event received.\n"); // Debug Here 
 		RecvData();
 		HandlePacket();
 		break;
@@ -158,7 +158,8 @@ void Network::RecvData() noexcept {
 	for (;;) {
 		int bytesRecv = ::recv(_socket, recvBuffer, RECV_BUFFER_SIZE, 0);
 		if (bytesRecv > 0) {
-			_bufferRecv.Enqueue(recvBuffer, bytesRecv); 
+			fprintf_s(stdout, "Bytes Received: %d\n", bytesRecv);
+			_bufferRecv.Enqueue(recvBuffer, bytesRecv);
 		}
 		else if (bytesRecv == 0) {
 			fwprintf_s(stdout, L"Connection closed by the server.\n");
@@ -191,7 +192,6 @@ void Network::HandlePacket() noexcept {
 		if(_bufferRecv.GetUsedSize() < PACKET_HEADER_SIZE) break;
 
 		PacketHeader header = { 0 }; 
-
 		int peekHeaderSize = _bufferRecv.Peek((char*)&header, PACKET_HEADER_SIZE);
 		if (peekHeaderSize != PACKET_HEADER_SIZE) break; 
 
@@ -206,7 +206,7 @@ void Network::HandlePacket() noexcept {
 		int bx = packet.payload.bx;
 		int by = packet.payload.by;
 
-		fwprintf_s(stdout, L"Received DRAW: (%d, %d) -> (%d, %d)\n", ax, ay, bx, by); 
+		// fwprintf_s(stdout, L"Received DRAW: (%d, %d) -> (%d, %d)\n", ax, ay, bx, by); 
 		WindowMain::GetInstance().EnqueueLineToDraw(ax, ay, bx, by);
 	}
 }
@@ -220,6 +220,21 @@ void Network::SendDrawPacket(const int ax, const int ay, const int bx, const int
 	packet.payload.bx = static_cast<uint32_t>(bx);
 	packet.payload.by = static_cast<uint32_t>(by);
 	_bufferSend.Enqueue(reinterpret_cast<const char*>(&packet), sizeof(Packet));
+
+	
+	packet.payload.ax += 100; 
+	packet.payload.bx += 100;
+	_bufferSend.Enqueue(reinterpret_cast<const char*>(&packet), sizeof(Packet)); 
+
+	packet.payload.ay += 100;
+	packet.payload.by += 100;
+	_bufferSend.Enqueue(reinterpret_cast<const char*>(&packet), sizeof(Packet));
+
+	
+	packet.payload.ax -= 100;
+	packet.payload.bx -= 100;
+	_bufferSend.Enqueue(reinterpret_cast<const char*>(&packet), sizeof(Packet)); 
+
 	// SendData(); // Later inside Engine Loop 
 }
 

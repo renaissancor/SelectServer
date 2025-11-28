@@ -6,8 +6,8 @@ class Network {
 private:
 	constexpr static const wchar_t* SERVER_IP = L"127.0.0.1";
 	constexpr static const u_short SERVER_PORT = 25000;
-	constexpr static const int RECV_BUFFER_SIZE = 512;
-	constexpr static const int SEND_BUFFER_SIZE = 512;
+	constexpr static const int RECV_BUFFER_SIZE = 32;
+	constexpr static const int SEND_BUFFER_SIZE = 32;
 
 	struct NetworkResults {
 		int _isConnectedToServer = 0;
