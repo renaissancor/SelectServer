@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Engine.h"
+#include "Network.h"
 
 Engine::Engine()
 {
@@ -10,6 +11,8 @@ Engine::Engine()
 Engine::~Engine() = default;
 
 bool Engine::Initialize() noexcept {
+	if (Network::Manager::GetInstance().Initialize() == false) return false; 
+	fprintf_s(stdout, "Network Initialization Bind Listen Complete\n"); 
 	return true;
 }
 
@@ -26,7 +29,9 @@ void Engine::Run() noexcept {
 	long long ticks_next_second_plan = ticks_curr_second_start + ticks_per_second;
 
 	_frameCount = 0;
-	timeBeginPeriod(1);
+	timeBeginPeriod(1); 
+
+	Network::Manager& network = Network::Manager::GetInstance(); 
 
 	while (_running) {
 		long long ticks_curr_frame = GetTick();
@@ -44,6 +49,13 @@ void Engine::Run() noexcept {
 		const long long ticks_curr_frame_limit =
 			ticks_curr_second_start + ((long long)_frameCount * ticks_per_second) / FRAME_PER_SECOND;
 
+		// TODO 
+		network.BuildFDSets(); 
+		network.Poll(); 
+		network.ProcessRecvData(); 
+		network.Flush(); 
+
+		
 		_FPS_curr++;
 
 		ticks_curr_frame = GetTick();

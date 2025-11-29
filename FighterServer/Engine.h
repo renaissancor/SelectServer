@@ -39,4 +39,5 @@ public:
 	bool Initialize() noexcept;
 	void Shutdown() noexcept;
 	void Run() noexcept;
+
 };

@@ -5,7 +5,7 @@ int main()
 {
 	Engine& engine = Engine::GetInstance(); 
 	if (!engine.Initialize()) {
-		std::cerr << "Engine initialization failed." << std::endl;
+		fprintf_s(stderr, "Engine initialization failed.\n"); 
 		return -1;
 	}
 	engine.Run();

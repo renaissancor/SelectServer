@@ -43,8 +43,8 @@
 #include "Protocol.h" 
 
 // Utility classes 
-#include "WinAtomic.h" 
 #include "RingBuffer.h"
+#include "WinAtomic.h" 
 
 // Core classes 
 #include "Client.h" 
