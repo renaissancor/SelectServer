@@ -45,6 +45,3 @@
 // Utility classes 
 #include "RingBuffer.h"
 #include "WinAtomic.h" 
-
-// Core classes 
-#include "Client.h" 

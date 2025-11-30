@@ -36,6 +36,15 @@ namespace Packet {
 }
 
 namespace Game {
+	constexpr static const short RANGE_MOVE_TOP = 50; 
+	constexpr static const short RANGE_MOVE_BOTTOM = 470;
+	constexpr static const short RANGE_MOVE_LEFT = 10;
+	constexpr static const short RANGE_MOVE_RIGHT = 630;
+	constexpr static const short RANGE_XY_ERROR = 50; 
+
+	constexpr static const short X_MOVE_PER_FRAME = 3;
+	constexpr static const short Y_MOVE_PER_FRAME = 2; 
+
 	enum Direction : uint8_t {
 		MOVE_DIR_LL = 0,
 		MOVE_DIR_LU = 1,
@@ -50,9 +59,10 @@ namespace Game {
 
 	struct Player {
 		bool _isAlive = false; 
-		Game::Direction _direction = Game::STOP;
-		int _x = 0;
-		int _y = 0;
+		bool _isMoving = false; 
+		Game::Direction _direction = Game::STOP; 
+		short _x = 0;
+		short _y = 0;
 		int _hp = 100;
 	};
 }
@@ -64,7 +74,7 @@ namespace Network {
 	constexpr static const size_t SESSION_MAX = 64; // FD_SETSIZE;
 
 	struct Session {
-		SOCKET socket = INVALID_SOCKET;
+		volatile SOCKET socket = INVALID_SOCKET;
 		sockaddr sockaddr = { 0 };
 		RingBuffer recvBuffer;
 		RingBuffer sendBuffer; 
@@ -112,15 +122,13 @@ namespace Network {
 
 		void BuildFDSets() noexcept;
 		void Receive(int sessionIndex) noexcept;
-		void ReceiveAll() noexcept; 
+		void Flush(int sessionIndex) noexcept; 
 		void Poll() noexcept; 
 		void ProcessRecvData() noexcept; 
-		void Flush() noexcept; 
+		void Update() noexcept; 
 
 		int  AcceptNewConnection() noexcept;
 		void HandleDisconnection(int sessionIndex) noexcept;
-
-
 
 		void Shutdown() noexcept;
 	}; // class Manager 

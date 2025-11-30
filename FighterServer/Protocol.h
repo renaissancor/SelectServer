@@ -41,142 +41,216 @@ struct PacketHeader {
 #pragma pack(pop) 
 
 #pragma pack(push, 1)
-struct PacketSCCreateMyCharacter {
+struct PayloadSCCreateMyCharacter {
 	uint32_t id; 
 	uint8_t direction; 
 	uint16_t x;
 	uint16_t y; 
 	uint8_t hp; // 100 
 };
+
+struct PacketSCCreateMyCharacter {
+	PacketHeader header; 
+	PayloadSCCreateMyCharacter payload;
+};
 #pragma pack(pop) 
 
 #pragma pack(push, 1)
-struct PacketSCCreateOtherCharacter {
-	PacketHeader header;
+struct PayloadSCCreateOtherCharacter {
 	uint32_t id;
 	uint8_t direction;
 	uint16_t x;
 	uint16_t y;
 	uint8_t hp;
 };
-#pragma pack(pop) 
 
-#pragma pack(push, 1)
-struct PacketSCDeleteCharacter {
+struct PacketSCCreateOtherCharacter {
 	PacketHeader header;
-	uint32_t id;
+	PayloadSCCreateOtherCharacter payload;
 };
 #pragma pack(pop) 
 
 #pragma pack(push, 1)
-struct PacketCSMoveStart {
+struct PayloadSCDeleteCharacter {
+	uint32_t id;
+};
+
+struct PacketSCDeleteCharacter {
 	PacketHeader header;
+	PayloadSCDeleteCharacter payload;
+};
+#pragma pack(pop) 
+
+#pragma pack(push, 1)
+struct PayloadCSMoveStart {
 	uint8_t direction; 
 	uint16_t x;
 	uint16_t y;
 };
+
+struct PacketCSMoveStart {
+	PacketHeader header; 
+	PayloadCSMoveStart payload; 
+};
 #pragma pack(pop) 
 
 #pragma pack(push, 1)
+struct PayloadSCMoveStart {
+	uint32_t id; 
+	uint8_t direction;
+	uint16_t x;
+	uint16_t y;
+};
+
 struct PacketSCMoveStart {
-	PacketHeader header;
+	PacketHeader header; 
+	PayloadSCMoveStart payload; 
+};
+#pragma pack(pop) 
+
+#pragma	pack(push, 1)
+struct PayloadCSMoveStop {
+	uint8_t direction;
+	uint16_t x;
+	uint16_t y;
+};
+
+struct PacketCSMoveStop {
+	PacketHeader header; 
+	PayloadCSMoveStop payload; 
+};
+#pragma pack(pop) 
+
+#pragma pack(push, 1)
+struct PayloadSCMoveStop {
 	uint32_t id; 
 	uint8_t direction;
 	uint16_t x;
 	uint16_t y;
 };
-#pragma pack(pop) 
 
-#pragma pack(push, 1)
 struct PacketSCMoveStop {
-	PacketHeader header;
-	uint32_t id; 
-	uint8_t direction;
-	uint16_t x;
-	uint16_t y;
+	PacketHeader header; 
+	PayloadSCMoveStop payload; 
 };
 #pragma pack(pop) 
 
 #pragma pack(push, 1)
+struct PayloadCSAttack1 {
+	uint8_t direction;
+	uint16_t x;
+	uint16_t y;
+};
+
 struct PacketCSAttack1 {
 	PacketHeader header;
-	uint8_t direction;
-	uint16_t x;
-	uint16_t y;
+	PayloadCSAttack1 payload;
 };
 #pragma pack(pop) 
 
 #pragma pack(push, 1)
+struct PayloadSCAttack1 {
+	uint32_t id;
+	uint8_t direction;
+	uint16_t x;
+	uint16_t y;
+};
+
 struct PacketSCAttack1 {
 	PacketHeader header;
-	uint32_t id;
-	uint8_t direction;
-	uint16_t x;
-	uint16_t y;
+	PayloadSCAttack1 payload;
 };
 #pragma pack(pop) 
 
 #pragma pack(push, 1)
+struct PayloadCSAttack2 {
+	uint8_t direction;
+	uint16_t x;
+	uint16_t y;
+};
+
 struct PacketCSAttack2 {
 	PacketHeader header;
-	uint8_t direction;
-	uint16_t x;
-	uint16_t y;
+	PayloadCSAttack2 payload;
 };
 #pragma pack(pop)
 
 #pragma pack(push, 1)
+struct PayloadSCAttack2 {
+	uint32_t id;
+	uint8_t direction;
+	uint16_t x;
+	uint16_t y;
+};
+
 struct PacketSCAttack2 {
 	PacketHeader header;
-	uint32_t id;
-	uint8_t direction;
-	uint16_t x;
-	uint16_t y;
+	PayloadSCAttack2 payload;
 };
 #pragma pack(pop)
 
 #pragma pack(push, 1)
+struct PayloadCSAttack3 {
+	uint8_t direction;
+	uint16_t x;
+	uint16_t y;
+};
+
 struct PacketCSAttack3 {
 	PacketHeader header;
-	uint8_t direction;
-	uint16_t x;
-	uint16_t y;
+	PayloadCSAttack3 payload;
 };
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct PacketSCAttack3 {
-	PacketHeader header;
+struct PayloadSCAttack3 {
 	uint32_t id;
 	uint8_t direction;
 	uint16_t x;
 	uint16_t y;
 };
+
+struct PacketSCAttack3 {
+	PacketHeader header;
+	PayloadSCAttack3 payload;
+};
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct PacketSCDamage {
-	PacketHeader header;
+struct PayloadSCDamage {
 	uint32_t attackID;
 	uint32_t targetID;
 	uint8_t remainingHP;
 };
+
+struct PacketSCDamage {
+	PacketHeader header;
+	PayloadSCDamage payload;
+};
 #pragma pack(pop) 
 
 #pragma pack(push, 1)
-struct PacketCSSync {
-	PacketHeader header;
+struct PayloadCSSync {
 	uint16_t x;
 	uint16_t y;
+};
+
+struct PacketCSSync {
+	PacketHeader header;
+	PayloadCSSync payload;
 };
 #pragma pack(pop)
 
 #pragma pack(push, 1)
-struct PacketSCSync {
-	PacketHeader header;
+struct PayloadSCSync {
 	uint32_t id;
 	uint16_t x;
 	uint16_t y;
+};
+
+struct PacketSCSync {
+	PacketHeader header;
+	PayloadSCSync payload;
 };
 #pragma pack(pop)
 

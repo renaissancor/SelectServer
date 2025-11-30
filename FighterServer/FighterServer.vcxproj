@@ -123,7 +123,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Client.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Network.cpp" />
@@ -133,8 +132,8 @@
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Client.h" />
     <ClInclude Include="Engine.h" />
+    <ClInclude Include="GameInfo.txt" />
     <ClInclude Include="Network.h" />
     <ClInclude Include="Protocol.h" />
     <ClInclude Include="PacketDefine.h" />

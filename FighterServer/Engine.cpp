@@ -50,11 +50,7 @@ void Engine::Run() noexcept {
 			ticks_curr_second_start + ((long long)_frameCount * ticks_per_second) / FRAME_PER_SECOND;
 
 		// TODO 
-		network.BuildFDSets(); 
 		network.Poll(); 
-		network.ProcessRecvData(); 
-		network.Flush(); 
-
 		
 		_FPS_curr++;
 

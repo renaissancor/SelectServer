@@ -30,6 +30,7 @@ public:
 		QueryPerformanceCounter(&time_current);
 		return time_current.QuadPart - _time_init.QuadPart;
 	}
+	inline const uint32_t GetFPS() const noexcept { return _FPS_prev; }
 
 	inline static Engine& GetInstance() noexcept {
 		static Engine instance;

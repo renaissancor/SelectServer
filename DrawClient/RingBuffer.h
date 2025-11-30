@@ -8,7 +8,6 @@ private:
 	int _capacity = 0;
 	int _head = 0;
 	int _tail = 0;
-	int _size = 0; 
 
 private:
 	void ResizeBuffer(const int newCapacity) noexcept; 
@@ -42,7 +41,7 @@ public:
 	inline const uintptr_t GetBufferTailPtr() const noexcept 
 	{ return reinterpret_cast<uintptr_t>(_buffer + _tail); }
 
-	RingBuffer(int capacity = 4096);
+	RingBuffer(int capacity = 8192);
 	~RingBuffer();
 
 	int Enqueue(const char* src, int size) noexcept;

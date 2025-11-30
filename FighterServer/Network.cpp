@@ -9,7 +9,6 @@ Network::Manager::~Manager() {
 
 }
 
-
 bool Network::Manager::Initialize() noexcept {
 	int _WSAStartupResult = 0;
 	int _ListenSocketCreateResult = 0;
@@ -47,7 +46,7 @@ bool Network::Manager::Initialize() noexcept {
 		return Helper();
 
 	linger so_linger = { 0, };
-	so_linger.l_onoff = 1;
+	so_linger.l_onoff = 1; // Enable Linger, end by RST 
 	so_linger.l_linger = 0;
 	_setsockoptLingerResult = ::setsockopt(_hListenSocket, SOL_SOCKET, SO_LINGER, (char*)&so_linger, sizeof(so_linger));
 	if (_setsockoptLingerResult == SOCKET_ERROR)
@@ -81,6 +80,7 @@ void Network::Manager::RenewHighestSocket() noexcept {
 		if (session.socket == INVALID_SOCKET) continue;
 		if (session.socket > _hMaxSocket) _hMaxSocket = session.socket;
 	}
+	fprintf_s(stdout, "Renewed Highest Socket: %llu\n", static_cast<unsigned long long>(_hMaxSocket));
 }
 
 void Network::Manager::BuildFDSets() noexcept {
@@ -100,8 +100,77 @@ void Network::Manager::BuildFDSets() noexcept {
 	}
 }
 
+
+void Network::Manager::Poll() noexcept {
+	BuildFDSets();
+
+	timeval tv = { 0, 0 };
+	fd_set readSetCopy = _readSet;
+	fd_set writeSetCopy = _writeSet;
+
+	int result = ::select(
+		static_cast<int>(_hMaxSocket) + 1,
+		&readSetCopy,
+		&writeSetCopy,
+		NULL,
+		&tv
+	);
+
+	if (result == SOCKET_ERROR) return;
+
+	if (result > 0) {
+		if (FD_ISSET(_hListenSocket, &readSetCopy)) {
+			AcceptNewConnection();
+		}
+
+		std::vector<int> sessionsToProcess;
+		for (int i = 0; i < SESSION_MAX; ++i) {
+			if (_sessions[i].socket == INVALID_SOCKET) continue;
+
+			SOCKET sock = _sessions[i].socket;
+
+			if (sock == INVALID_SOCKET) continue;
+
+			if (_sessions[i].socket == INVALID_SOCKET) continue;
+
+			if (FD_ISSET(sock, &readSetCopy)) {
+				sessionsToProcess.push_back(i);
+			}
+		}
+
+		for (int idx : sessionsToProcess) {
+			if (_sessions[idx].socket == INVALID_SOCKET) {
+				fprintf(stdout, "[Poll] Skipping session %d (INVALID before Receive)\n", idx);
+				continue;
+			}
+			Receive(idx);
+		}
+
+		ProcessRecvData();
+		Update();
+
+		std::vector<int> sessionsToFlush;
+		for (int i = 0; i < SESSION_MAX; ++i) {
+			if (_sessions[i].socket == INVALID_SOCKET) continue;
+			SOCKET sock = _sessions[i].socket;
+			if (sock == INVALID_SOCKET) continue;
+			if (_sessions[i].socket == INVALID_SOCKET) continue;
+
+			if (FD_ISSET(sock, &writeSetCopy)) {
+				sessionsToFlush.push_back(i);
+			}
+		}
+
+		for (int idx : sessionsToFlush) {
+			if (_sessions[idx].socket == INVALID_SOCKET) continue;
+			Flush(idx);
+		}
+	}
+}
+
 int Network::Manager::AcceptNewConnection() noexcept {
-	for (int newSession = 0;; ++newSession) {
+	int acceptedCount = 0;
+	while (true) {
 
 		SOCKADDR_IN clientAddr = { 0 };
 		int clientAddrLen = sizeof(clientAddr);
@@ -110,7 +179,8 @@ int Network::Manager::AcceptNewConnection() noexcept {
 		if (hNewSocket == INVALID_SOCKET) {
 			int wsaError = WSAGetLastError();
 			if (wsaError != WSAEWOULDBLOCK) _WSAGetLastErrorResult = wsaError;
-			return newSession;
+			RenewHighestSocket(); // before return! 
+			return acceptedCount;
 		}
 
 		int newSessionIndex = GetAvailableSessionIndex(); 
@@ -119,6 +189,8 @@ int Network::Manager::AcceptNewConnection() noexcept {
 			::closesocket(hNewSocket); 
 			continue;
 		}
+		
+		acceptedCount++;
 
 		u_long nonBlockingMode = 1;
 		::ioctlsocket(hNewSocket, FIONBIO, &nonBlockingMode);
@@ -126,29 +198,24 @@ int Network::Manager::AcceptNewConnection() noexcept {
 		int flag = 1;
 		::setsockopt(hNewSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
 
-		linger so_linger = { 1, 0 }; // Close by RST 
+		linger so_linger = { 1 , 0 }; // { 1, 0 }; // Close by RST 
 		::setsockopt(hNewSocket, SOL_SOCKET, SO_LINGER, (char*)&so_linger, sizeof(so_linger));
+		
+		// TCP Setup Complete 
 		
 		Session& session = _sessions[newSessionIndex]; 
 		session.socket = hNewSocket; 
 
-		PacketHeader header = {}; 
 		PacketSCCreateMyCharacter packetSCCreateMyCharacter = {};
-		header.code = 0x89;
-		header.size = sizeof(PacketSCCreateMyCharacter); 
-		fprintf_s(stdout, "%zu\n", sizeof(PacketSCCreateMyCharacter)); 
-		header.type = PACKET_SC_CREATE_MY_CHARACTER;
+		packetSCCreateMyCharacter.header.code = 0x89;
+		packetSCCreateMyCharacter.header.size = sizeof(PayloadSCCreateMyCharacter);
+		packetSCCreateMyCharacter.header.type = PACKET_SC_CREATE_MY_CHARACTER;
 
-		packetSCCreateMyCharacter.id = newSessionIndex; 
-		packetSCCreateMyCharacter.direction = PACKET_MOVE_DIR_LL;
-		packetSCCreateMyCharacter.x = 100;
-		packetSCCreateMyCharacter.y = 100;
-		packetSCCreateMyCharacter.hp = 100; 
-
-		session.sendBuffer.Enqueue(
-			reinterpret_cast<const char*>(&header),
-			sizeof(PacketHeader)
-		);
+		packetSCCreateMyCharacter.payload.id = newSessionIndex; 
+		packetSCCreateMyCharacter.payload.direction = PACKET_MOVE_DIR_LL;
+		packetSCCreateMyCharacter.payload.x = 100;
+		packetSCCreateMyCharacter.payload.y = 100;
+		packetSCCreateMyCharacter.payload.hp = 100; 
 
 		session.sendBuffer.Enqueue(
 			reinterpret_cast<const char*>(&packetSCCreateMyCharacter),
@@ -158,158 +225,307 @@ int Network::Manager::AcceptNewConnection() noexcept {
 		PacketSCCreateOtherCharacter packetSCCreateOtherCharacter = {}; 
 
 		packetSCCreateOtherCharacter.header.code = 0x89;
-		packetSCCreateOtherCharacter.header.size = sizeof(PacketSCCreateOtherCharacter);
+		packetSCCreateOtherCharacter.header.size = (uint8_t)sizeof(PayloadSCCreateOtherCharacter);
 		packetSCCreateOtherCharacter.header.type = PACKET_SC_CREATE_OTHER_CHARACTER;
 
-		packetSCCreateOtherCharacter.id = newSessionIndex; 
-		packetSCCreateOtherCharacter.direction = PACKET_MOVE_DIR_LL;
-		packetSCCreateOtherCharacter.x = 574;
-		packetSCCreateOtherCharacter.y = 320;
-		packetSCCreateOtherCharacter.hp = 100;
+		packetSCCreateOtherCharacter.payload.id = newSessionIndex; 
+		packetSCCreateOtherCharacter.payload.direction = PACKET_MOVE_DIR_LL;
+		packetSCCreateOtherCharacter.payload.x = 100;
+		packetSCCreateOtherCharacter.payload.y = 100;
+		packetSCCreateOtherCharacter.payload.hp = 100;
 
 		for (int i = 0; i < SESSION_MAX; ++i) {
 			if (i == newSessionIndex) continue; 
 			Session& otherSession = _sessions[i]; 
 			if (otherSession.socket == INVALID_SOCKET) continue; 
+			
 			otherSession.sendBuffer.Enqueue(
 				reinterpret_cast<const char*>(&packetSCCreateOtherCharacter),
 				sizeof(PacketSCCreateOtherCharacter)
 			);
 		}
 
-		RenewHighestSocket(); // for select 
 	}
 }
 
 void Network::Manager::HandleDisconnection(int sessionIndex) noexcept {
 	if (sessionIndex < 0 || sessionIndex >= SESSION_MAX) return;
+	fprintf_s(stdout, "Disconnected Session %d...\n", sessionIndex); 
 	auto& session = _sessions[sessionIndex];
 	if (session.socket != INVALID_SOCKET) {
+		SOCKET socketToClose = session.socket;
+		FD_CLR(socketToClose, &_readSet);
+		FD_CLR(socketToClose, &_writeSet);
 		::closesocket(session.socket);
 		session.socket = INVALID_SOCKET;
 		session.recvBuffer.ClearBuffer();
 		session.sendBuffer.ClearBuffer();
+		RenewHighestSocket();
 	}
 }
 
 void Network::Manager::Receive(int sessionIndex) noexcept {
+	if (sessionIndex < 0 || sessionIndex >= SESSION_MAX) return;
+
 	Session& session = _sessions[sessionIndex]; 
-	// if (session.socket == INVALID_SOCKET) return; 
-	// if (FD_ISSET(session.socket, &_readSet) == 0) return; 
-
-	int bytesCanRecv = static_cast<int>(session.recvBuffer.DirectEnqueueSize()); 
-	char* recvPtr = reinterpret_cast<char*>(session.recvBuffer.GetBufferTailPtr()); 
-
-	int bytesRecv = ::recv(session.socket, recvPtr, bytesCanRecv, 0); 
-
-	if (bytesRecv == SOCKET_ERROR) {
-		_WSAGetLastErrorResult = WSAGetLastError();
-		if (_WSAGetLastErrorResult == WSAEWOULDBLOCK) return; 
-		else {
-			HandleDisconnection(sessionIndex); 
-			return; 
-		}
+	if (session.socket == INVALID_SOCKET) {
+		fprintf(stderr, "Receive called on invalid session %d\n", sessionIndex);
+		return;
 	}
-	else if (bytesRecv == 0) {
-		HandleDisconnection(sessionIndex); 
+
+	if (session.recvBuffer.GetFreeSize() == 0) {
+		fprintf(stdout, "Session %d recv buffer full, skipping recv.\n", sessionIndex);
+		return;
+	}
+
+	int result = session.recvBuffer.RecvFromTCP(session.socket);
+	printf("[Receive] Session %d RecvFromTCP result = %d, recv buffer size = %d\n", 
+		sessionIndex, result, session.recvBuffer.GetUsedSize());
+
+	if (result > 0) return; 
+	else if (result == 0) {
+		fprintf(stdout, "Session %d recv returned 0 (connection closed)\n", sessionIndex);
+		HandleDisconnection(sessionIndex);
 		return; 
-	}
+	} 
+	
+	int errorCode = -result;
+	if (errorCode == WSAEWOULDBLOCK) {
+		return; // No data available right now in non-blocking mode 
+	} 
 	else {
-		session.recvBuffer.MoveTail(static_cast<size_t>(bytesRecv)); 
+		_WSAGetLastErrorResult = result;
+		fprintf(stderr, "Session %d recv error: WSAGetLastError = %d\n", sessionIndex, errorCode);
+		HandleDisconnection(sessionIndex);
+		return;
 	}
 }
 
-void Network::Manager::Poll() noexcept {
-	timeval tv = { 0, 0 };
-	int result = ::select(
-		static_cast<int>(_hMaxSocket) + 1, 
-		&_readSet, 
-		&_writeSet, 
-		NULL,
-		&tv
-	);
-
-	if (result == SOCKET_ERROR) return; 
-
-	if (result > 0) {
-		if (FD_ISSET(_hListenSocket, &_readSet)) {
-			AcceptNewConnection();
-		}
-		ReceiveAll();
-	}
-
-}
-
-void Network::Manager::ReceiveAll() noexcept {
-	for (int i = 0; i < SESSION_MAX; ++i) {
-		auto& session = _sessions[i];
-		if (session.socket == INVALID_SOCKET) continue; 
-		if (FD_ISSET(session.socket, &_readSet) == 0) continue; 
-		Receive(i); 
-	}
-}
 
 void Network::Manager::ProcessRecvData() noexcept {
+	// fprintf_s(stdout, "Function [ProcessRecvData] called\n");
 	for (int i = 0; i < SESSION_MAX; ++i) {
 		Session& session = _sessions[i]; 
 		if (session.socket == INVALID_SOCKET) continue; 
 		
-		while (session.recvBuffer.GetUsedSize() >= sizeof(PacketHeader)) {
+		while (session.recvBuffer.IsEmpty() == false) {
+			fprintf_s(stdout, "Recv Buffer Used Size for Session %d: %d bytes\n",
+				i, session.recvBuffer.GetUsedSize());
+			// Peek header 
 			PacketHeader header = { 0, }; 
 			int peekBytes = session.recvBuffer.Peek(
 				reinterpret_cast<char*>(&header),
 				sizeof(PacketHeader)
 			);
 			if (peekBytes < sizeof(PacketHeader)) break;
-			uint8_t totalPacketSize = header.size;
 
-			if (totalPacketSize < sizeof(PacketHeader) 
-				|| totalPacketSize > 256 /* max safe buffer size */) {
+			// Print Packet 
+			fprintf_s(stdout, "Session %d Packet Header: code=0x%02X, size=%u, type=0x%02X\n",
+				i, header.code, header.size, header.type);
+
+			// Basic header validation
+			if (header.code != 0x89) {
+				fprintf_s(stderr, "Session %d invalid header.code=0x%02X -> disconnect\n", i, header.code);
+				HandleDisconnection(i);
+				break;
+			}
+			uint8_t payloadSize = header.size;
+			if (payloadSize == 0 || payloadSize > 64) {
+				fprintf_s(stderr, "Session %d invalid header.size=%u -> disconnect\n", i, payloadSize);
 				HandleDisconnection(i);
 				break;
 			}
 
-			if (session.recvBuffer.GetUsedSize() < totalPacketSize) {
-				break; 
-			}
+			size_t totalSize = sizeof(PacketHeader) + static_cast<size_t>(payloadSize);
+			if (session.recvBuffer.GetUsedSize() < totalSize) break; // Not enough data yet 
 
-			char buffer[256];
-			session.recvBuffer.Dequeue(buffer, totalPacketSize);
+			// Wait until full packet arrives
+			
+			std::vector<char> packetBuf(totalSize);
+            int deq = session.recvBuffer.Dequeue(packetBuf.data(), static_cast<int>(totalSize));
+            if (deq < static_cast<int>(totalSize)) {
+                fprintf_s(stderr, "Session %d dequeue failed (got %d of %zu) -> disconnect\n", i, deq, totalSize);
+                HandleDisconnection(i);
+                break;
+            }
 
-		}
+			PacketHeader* pHeader = reinterpret_cast<PacketHeader*>(packetBuf.data());
+			char* payloadPtr = packetBuf.data() + sizeof(PacketHeader);
 
-
-
-	}
-}
-
-void Network::Manager::Flush() noexcept {
-	for (int i = 0; i < SESSION_MAX; ++i) {
-		auto& session = _sessions[i];
-		if (session.socket == INVALID_SOCKET) continue; 
-		if (FD_ISSET(session.socket, &_writeSet) == 0) continue; 
-		
-		while (session.sendBuffer.GetUsedSize() > 0) {
-			int bytesToSend = static_cast<int>(session.sendBuffer.GetUsedSize()); 
-			const char* sendPtr = reinterpret_cast<const char*>(session.sendBuffer.GetBufferHeadPtr());
-			int bytesSent = ::send(session.socket, sendPtr, bytesToSend, 0);
-
-			if (bytesSent == SOCKET_ERROR) {
-				_WSAGetLastErrorResult = WSAGetLastError(); 
-				if (_WSAGetLastErrorResult == WSAEWOULDBLOCK) break; 
-				else {
-					HandleDisconnection(i); 
-					break; 
+			switch (pHeader->type) {
+			case Packet::Type::CS_MOVE_START: {
+				fprintf_s(stdout, "PACKET CS_MOVE_START from Session %d received.\n", i);
+				if (payloadSize != sizeof(PayloadCSMoveStart)) {
+					fprintf_s(stderr, "Session %d CS_MOVE_START size mismatch (%u != %zu) -> disconnect\n",
+						i, payloadSize, sizeof(PayloadCSMoveStart));
+					HandleDisconnection(i);
+					break;
 				}
+				auto* p = reinterpret_cast<PayloadCSMoveStart*>(payloadPtr);
+				Game::Player& player = _players[i];
+				player._isMoving = true;
+				player._direction = static_cast<Game::Direction>(p->direction);
+				player._x = p->x;
+				player._y = p->y;
+
+				// Broadcast SC_MOVE_START
+				PacketSCMoveStart out = {};
+				out.header.code = 0x89;
+				out.header.size = static_cast<uint8_t>(sizeof(PayloadSCMoveStart));
+				out.header.type = Packet::Type::SC_MOVE_START;
+				out.payload.id = i;
+				out.payload.direction = player._direction;
+				out.payload.x = player._x;
+				out.payload.y = player._y;
+
+				for (int j = 0; j < SESSION_MAX; ++j) {
+					if (j == i) continue;
+					Session& other = _sessions[j];
+					if (other.socket == INVALID_SOCKET) continue;
+					other.sendBuffer.Enqueue(reinterpret_cast<const char*>(&out), sizeof(out));
+				}
+			} break;
+
+			case Packet::Type::CS_MOVE_STOP: {
+				fprintf_s(stdout, "PACKET CS_MOVE_STOP from Session %d received.\n", i); 
+				if (payloadSize != sizeof(PayloadCSMoveStop)) {
+					fprintf_s(stderr, "Session %d CS_MOVE_STOP size mismatch (%u != %zu) -> disconnect\n",
+						i, payloadSize, sizeof(PayloadCSMoveStop));
+					HandleDisconnection(i);
+					break;
+				}
+				auto* p = reinterpret_cast<PayloadCSMoveStop*>(payloadPtr);
+				Game::Player& player = _players[i];
+				player._isMoving = false;
+				player._direction = static_cast<Game::Direction>(p->direction);
+				player._x = p->x;
+				player._y = p->y;
+
+				PacketSCMoveStop out = {};
+				out.header.code = 0x89;
+				out.header.size = static_cast<uint8_t>(sizeof(PayloadSCMoveStop));
+				out.header.type = Packet::Type::SC_MOVE_STOP;
+				out.payload.id = i;
+				out.payload.direction = player._direction;
+				out.payload.x = player._x;
+				out.payload.y = player._y;
+
+				for (int j = 0; j < SESSION_MAX; ++j) {
+					if (j == i) continue;
+					Session& other = _sessions[j];
+					if (other.socket == INVALID_SOCKET) continue;
+					other.sendBuffer.Enqueue(reinterpret_cast<const char*>(&out), sizeof(out));
+				}
+			} break;
+
+			case Packet::Type::CS_ATTACK1: {
+			} break;
+			case Packet::Type::CS_ATTACK2: {
+			} break;
+			case Packet::Type::CS_ATTACK3: {
+			} break;
+			case Packet::Type::CS_SYNC: {
+			} break;
+			default: {
+				fprintf_s(stderr, "Session %d unknown packet type 0x%02X -> disconnect.", i, header.type);
+				HandleDisconnection(i);
+			} break;
 			}
 
-			if (bytesSent > 0) 
-				session.sendBuffer.MoveHead(static_cast<size_t>(bytesSent)); 
-			if (bytesSent == 0) break; 
+
 		}
 	}
 }
 
+void Network::Manager::Update() noexcept {
+	// Game logic update can be implemented here 
+	for (int i = 0; i < SESSION_MAX; ++i) {
+		Game::Player& player = _players[i];
+		if (player._isAlive == false) continue; 
+		if(player._isMoving) {
+			// Update player position based on direction 
+			switch (player._direction) {
+			case Game::MOVE_DIR_LL:
+				player._x -= Game::X_MOVE_PER_FRAME;
+				if (player._x < Game::RANGE_MOVE_LEFT) 
+					player._x = Game::RANGE_MOVE_LEFT;
+				break;
+			case Game::MOVE_DIR_LU:
+				player._x -= Game::X_MOVE_PER_FRAME;
+				player._y -= Game::Y_MOVE_PER_FRAME;
+				if (player._x < Game::RANGE_MOVE_LEFT)
+					player._x = Game::RANGE_MOVE_LEFT;
+				if (player._y < Game::RANGE_MOVE_TOP)
+					player._y = Game::RANGE_MOVE_TOP;
+				break;
+			case Game::MOVE_DIR_UU:
+				player._y -= Game::Y_MOVE_PER_FRAME;
+				if (player._y < Game::RANGE_MOVE_TOP)
+					player._y = Game::RANGE_MOVE_TOP;
+				break;
+			case Game::MOVE_DIR_RU:
+				player._x += Game::X_MOVE_PER_FRAME;
+				player._y -= Game::Y_MOVE_PER_FRAME;
+				if (player._x > Game::RANGE_MOVE_RIGHT)
+					player._x = Game::RANGE_MOVE_RIGHT;
+				if (player._y < Game::RANGE_MOVE_TOP)
+					player._y = Game::RANGE_MOVE_TOP;
+				break;
+			case Game::MOVE_DIR_RR:
+				player._x += Game::X_MOVE_PER_FRAME;
+				if (player._x > Game::RANGE_MOVE_RIGHT)
+					player._x = Game::RANGE_MOVE_RIGHT;
+				break;
+			case Game::MOVE_DIR_RD:
+				player._x += 1;
+				player._y += 1;
+				if (player._x > Game::RANGE_MOVE_RIGHT)
+					player._x = Game::RANGE_MOVE_RIGHT;
+				if (player._y > Game::RANGE_MOVE_BOTTOM)
+					player._y = Game::RANGE_MOVE_BOTTOM;
+				break;
+			case Game::MOVE_DIR_DD:
+				player._y += 1;
+				if (player._y > Game::RANGE_MOVE_BOTTOM)
+					player._y = Game::RANGE_MOVE_BOTTOM;
+				break;
+			case Game::MOVE_DIR_LD:
+				player._x -= 1;
+				player._y += 1;
+				if (player._x < Game::RANGE_MOVE_LEFT)
+					player._x = Game::RANGE_MOVE_LEFT;
+				if (player._y > Game::RANGE_MOVE_BOTTOM)
+					player._y = Game::RANGE_MOVE_BOTTOM;
+				break;
+			default:
+				break;
+			}
+			fprintf_s(stdout, "Player %d moved to (%d, %d)\n", i, player._x, player._y); 
+		}
+	}
+}
+
+
+void Network::Manager::Flush(int sessionIndex) noexcept {
+	if (sessionIndex < 0 || sessionIndex >= SESSION_MAX) return; 
+
+	Session& session = _sessions[sessionIndex];
+	if (session.socket == INVALID_SOCKET) return;
+
+	int sentBytes = session.sendBuffer.SendToTCP(session.socket);
+	fprintf_s(stdout, "[Flush] Before: head=%d, tail=%d, capacity=%d, used=%d\n",
+		session.sendBuffer.GetHeadIndex(),
+		session.sendBuffer.GetTailIndex(),
+		session.sendBuffer.GetCapacity(),
+		session.sendBuffer.GetUsedSize());
+
+	if (sentBytes < 0) {
+		_WSAGetLastErrorResult = -sentBytes; 
+		fprintf(stderr, "Session %d send error: WSAGetLastError = %d\n", sessionIndex, _WSAGetLastErrorResult);
+		HandleDisconnection(sessionIndex);
+		return;
+	}
+}
 
 
 void Network::Manager::Shutdown() noexcept {
@@ -319,7 +535,4 @@ void Network::Manager::Shutdown() noexcept {
 	}
 	::WSACleanup();
 }
-
-
-
 

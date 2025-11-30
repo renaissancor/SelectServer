@@ -24,9 +24,6 @@
     <ClCompile Include="RingBuffer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Client.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="Network.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -47,9 +44,6 @@
     <ClInclude Include="Engine.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="Client.h">
-      <Filter>Header</Filter>
-    </ClInclude>
     <ClInclude Include="RingBuffer.h">
       <Filter>Header</Filter>
     </ClInclude>
@@ -58,6 +52,9 @@
     </ClInclude>
     <ClInclude Include="Network.h">
       <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="GameInfo.txt">
+      <Filter>리소스 파일</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -3,9 +3,10 @@
 
 // RingBuffer.cpp 
 
-RingBuffer::RingBuffer(int capacity) :
-	_buffer(new char[capacity]), _capacity(capacity), _head(0), _tail(0), _size(0)
+RingBuffer::RingBuffer(int capacity = 8192) : 
+	_capacity(capacity), _head(0), _tail(0)
 {
+	_buffer = new char[_capacity];
 }
 
 RingBuffer::~RingBuffer() 
