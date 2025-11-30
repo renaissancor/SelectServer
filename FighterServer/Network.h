@@ -33,6 +33,9 @@ namespace Packet {
 		MOVE_DIR_DD = 6,
 		MOVE_DIR_LD = 7,
 	};
+
+	
+
 }
 
 namespace Game {
@@ -57,6 +60,13 @@ namespace Game {
 		STOP = 8, 
 	};
 
+	enum AttackType : uint8_t {
+		NO_ATTACK = 0,
+		ATTACK1 = 1,
+		ATTACK2 = 2,
+		ATTACK3 = 3,
+	};
+
 	struct Player {
 		bool _isAlive = false; 
 		bool _isMoving = false; 
@@ -64,6 +74,7 @@ namespace Game {
 		short _x = 0;
 		short _y = 0;
 		int _hp = 100;
+		Game::AttackType _attackType = Game::NO_ATTACK; 
 	};
 }
 
@@ -74,9 +85,9 @@ namespace Network {
 	constexpr static const size_t SESSION_MAX = 64; // FD_SETSIZE;
 
 	struct Session {
-		volatile SOCKET socket = INVALID_SOCKET;
-		sockaddr sockaddr = { 0 };
-		RingBuffer recvBuffer;
+		volatile SOCKET socket = INVALID_SOCKET; 
+		sockaddr sockaddr = { 0 }; 
+		RingBuffer recvBuffer; 
 		RingBuffer sendBuffer; 
 	};
 
@@ -125,7 +136,8 @@ namespace Network {
 		void Flush(int sessionIndex) noexcept; 
 		void Poll() noexcept; 
 		void ProcessRecvData() noexcept; 
-		void Update() noexcept; 
+		void UpdateAttack() noexcept; 
+		void UpdateMove() noexcept; 
 
 		int  AcceptNewConnection() noexcept;
 		void HandleDisconnection(int sessionIndex) noexcept;

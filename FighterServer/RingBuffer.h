@@ -36,7 +36,6 @@ public:
 			return _head - _tail - 1;
 	}
 
-
 	inline int DirectDequeueSize() const noexcept
 	{ return (_tail < _head) ? _capacity - _head : _tail - _head; }
 
