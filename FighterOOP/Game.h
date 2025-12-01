@@ -41,12 +41,38 @@ namespace Game {
 		int _hp = 100;
 	};
 
+	inline bool CheckAttackDirection(
+		const Game::Player* attacker, const Game::Player* target) noexcept {
+		short dx = target->_x - attacker->_x;
+		short dy = target->_y - attacker->_y;
+		switch (attacker->_direction) {
+		case Game::MOVE_DIR_LL:
+			return dx < 0;
+		case Game::MOVE_DIR_LU:
+			return dx < 0 && dy < 0;
+		case Game::MOVE_DIR_UU:
+			return dy < 0;
+		case Game::MOVE_DIR_RU:
+			return dx > 0 && dy < 0;
+		case Game::MOVE_DIR_RR:
+			return dx > 0;
+		case Game::MOVE_DIR_RD:
+			return dx > 0 && dy > 0;
+		case Game::MOVE_DIR_DD:
+			return dy > 0;
+		case Game::MOVE_DIR_LD:
+			return dx < 0 && dy > 0;
+		default:
+			return false;
+		}
+	}
+
 	class Manager {
 	private:
 		Player _players[Game::PLAYER_MAX];
 
 	public:
-		static Manager& GetInstance() noexcept {
+		inline static Manager& GetInstance() noexcept {
 			static Manager instance;
 			return instance;
 		}

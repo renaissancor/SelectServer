@@ -250,6 +250,8 @@ void Game::Manager::UpdateAttackDamage() noexcept {
 			short dy = targetPlayer._y - player._y;
 			int distanceSquared = dx * dx + dy * dy;
 			if (distanceSquared > attackRange * attackRange) continue; // Out of range 
+			bool isInAttackDirection = Game::CheckAttackDirection(&player, &targetPlayer);
+			if (!isInAttackDirection) continue;
 
 			fprintf_s(stdout, "[DAMAGE]	Player %d attacked Player %d\n", i, j);
 

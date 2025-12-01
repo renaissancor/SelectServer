@@ -24,6 +24,12 @@
     <ClInclude Include="Protocol.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Net.h">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -31,6 +37,12 @@
     </ClCompile>
     <ClCompile Include="RingBuffer.cpp">
       <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Net.cpp">
+      <Filter>Header</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

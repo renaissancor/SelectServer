@@ -263,13 +263,15 @@ void Net::Manager::HandleDisconnection(int sessionIndex) noexcept {
 		return;
 	}
 
-	::closesocket(sessionToClose.socket); 
+	SOCKET socketToClose = sessionToClose.socket;
+	FD_CLR(socketToClose, &_readSet);
+	FD_CLR(socketToClose, &_writeSet);
+	::closesocket(socketToClose);
 	sessionToClose.socket = INVALID_SOCKET;
 	sessionToClose.recvBuffer.ClearBuffer();
 	sessionToClose.sendBuffer.ClearBuffer();
-	FD_CLR(sessionToClose.socket, &_readSet);
-	FD_CLR(sessionToClose.socket, &_writeSet);
-
+	UpdateMaxSocketAfterDisconnection(socketToClose);
+	
 	UpdateMaxSocketAfterDisconnection(sessionToClose.socket); 
 
 	Game::Manager& gameManager = Game::Manager::GetInstance();
