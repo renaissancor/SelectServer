@@ -3,13 +3,13 @@
 // RingBuffer.h 
 
 class RingBuffer {
-private:
+protected:
 	char* _buffer = nullptr;
 	int _capacity = 0;
 	int _head = 0;
 	int _tail = 0;
 
-private:
+protected:
 	void ResizeBuffer(const int newCapacity) noexcept;
 
 public:
@@ -18,14 +18,12 @@ public:
 
 	inline int GetHeadIndex() const noexcept { return _head; }
 	inline int GetTailIndex() const noexcept { return _tail; }
-
 	inline int GetCapacity() const noexcept { return _capacity; }
+
 	inline int GetUsedSize() const noexcept 
-	{
-		return (_head <= _tail) ? (_tail - _head) : (_capacity - _head + _tail); 
-	}
+		{ return (_head <= _tail) ? (_tail - _head) : (_capacity - _head + _tail); }
 	inline int GetFreeSize() const noexcept 
-	{ return _capacity - GetUsedSize() - 1; }
+		{ return _capacity - GetUsedSize() - 1; }
 
 	inline int DirectEnqueueSize() const noexcept
 	{
@@ -60,16 +58,14 @@ public:
 		_tail = 0;
 	}
 
-
-	RingBuffer(int capacity = 8192);
+	RingBuffer(int capacity = 4096);
 	~RingBuffer();
 
 	int Enqueue(const char* src, int size) noexcept; 
 	int Dequeue(char* dst, int size) noexcept;
 	int Peek(char* dst, int size) const noexcept; 
 
-
 	int RecvFromTCP(SOCKET socket) noexcept; 
 	int SendToTCP(SOCKET socket) noexcept; 
-
 };
+

@@ -128,7 +128,6 @@ namespace Network {
 		}
 
 		void RenewHighestSocket() noexcept;
-
 		bool Initialize() noexcept; 
 
 		void BuildFDSets() noexcept;

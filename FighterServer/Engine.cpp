@@ -51,7 +51,9 @@ void Engine::Run() noexcept {
 
 		// TODO 
 		network.Poll(); 
-		
+		network.UpdateAttack();
+		network.UpdateMove(); 
+
 		_FPS_curr++;
 
 		ticks_curr_frame = GetTick();

@@ -147,8 +147,6 @@ void Network::Manager::Poll() noexcept {
 		}
 
 		ProcessRecvData();
-		UpdateAttack(); 
-		UpdateMove();
 
 		std::vector<int> sessionsToFlush;
 		for (int i = 0; i < SESSION_MAX; ++i) {
@@ -207,6 +205,20 @@ int Network::Manager::AcceptNewConnection() noexcept {
 		Session& session = _sessions[newSessionIndex]; 
 		session.socket = hNewSocket; 
 
+		Game::Player& player = _players[newSessionIndex];
+		player._isAlive = true;
+		player._isMoving = false;
+		player._attackType = Game::NO_ATTACK;
+		player._direction = Game::STOP;
+		player._hp = 100;
+		short startX = rand() % 400 + 100;
+		short startY = rand() % 300 + 100;
+		player._x = startX;
+		player._y = startY;
+
+		fprintf_s(stdout, "Accepted New Connection: Session %d, Socket %llu\n",
+			newSessionIndex, static_cast<unsigned long long>(hNewSocket));
+
 		PacketSCCreateMyCharacter packetSCCreateMyCharacter = {};
 		packetSCCreateMyCharacter.header.code = 0x89;
 		packetSCCreateMyCharacter.header.size = sizeof(PayloadSCCreateMyCharacter);
@@ -215,8 +227,6 @@ int Network::Manager::AcceptNewConnection() noexcept {
 		packetSCCreateMyCharacter.payload.id = newSessionIndex; 
 		packetSCCreateMyCharacter.payload.direction = PACKET_MOVE_DIR_LL; 
 
-		short startX = rand() % 400 + 100;
-		short startY = rand() % 300 + 100;
 
 		packetSCCreateMyCharacter.payload.x = startX;
 		packetSCCreateMyCharacter.payload.y = startY;
@@ -233,23 +243,29 @@ int Network::Manager::AcceptNewConnection() noexcept {
 		packetSCCreateOtherCharacter.header.size = (uint8_t)sizeof(PayloadSCCreateOtherCharacter);
 		packetSCCreateOtherCharacter.header.type = PACKET_SC_CREATE_OTHER_CHARACTER;
 
-		packetSCCreateOtherCharacter.payload.id = newSessionIndex; 
-		packetSCCreateOtherCharacter.payload.direction = PACKET_MOVE_DIR_LL;
-		packetSCCreateOtherCharacter.payload.x = startX;
-		packetSCCreateOtherCharacter.payload.y = startY;
-		packetSCCreateOtherCharacter.payload.hp = 100;
-
 		for (int i = 0; i < SESSION_MAX; ++i) {
 			if (i == newSessionIndex) continue; 
 			Session& otherSession = _sessions[i]; 
 			if (otherSession.socket == INVALID_SOCKET) continue; 
+
+			packetSCCreateOtherCharacter.payload.id = newSessionIndex;
+			packetSCCreateOtherCharacter.payload.direction = PACKET_MOVE_DIR_LL;
+			packetSCCreateOtherCharacter.payload.x = startX;
+			packetSCCreateOtherCharacter.payload.y = startY;
+			packetSCCreateOtherCharacter.payload.hp = 100;
 			
 			otherSession.sendBuffer.Enqueue(
 				reinterpret_cast<const char*>(&packetSCCreateOtherCharacter),
 				sizeof(PacketSCCreateOtherCharacter)
 			);
 
+			Game::Player& otherPlayer = _players[i];
 			packetSCCreateOtherCharacter.payload.id = i; 
+			packetSCCreateOtherCharacter.payload.direction = otherPlayer._direction;
+			packetSCCreateOtherCharacter.payload.x = otherPlayer._x;
+			packetSCCreateOtherCharacter.payload.y = otherPlayer._y;
+			packetSCCreateOtherCharacter.payload.hp = static_cast<uint8_t>(otherPlayer._hp); 
+
 			session.sendBuffer.Enqueue(
 				reinterpret_cast<const char*>(&packetSCCreateOtherCharacter),
 				sizeof(PacketSCCreateOtherCharacter)
@@ -460,7 +476,7 @@ void Network::Manager::ProcessRecvData() noexcept {
 					HandleDisconnection(i);
 					break;
 				}
-				auto* p = reinterpret_cast<PayloadCSAttack1*>(payloadPtr);
+				PayloadCSAttack1* p = reinterpret_cast<PayloadCSAttack1*>(payloadPtr);
 				
 				Game::Player& player = _players[i];
 				player._attackType = Game::AttackType::ATTACK1;
@@ -468,6 +484,8 @@ void Network::Manager::ProcessRecvData() noexcept {
 				player._direction = static_cast<Game::Direction>(p->direction);
 				player._x = p->x;
 				player._y = p->y;
+
+				fprintf_s(stdout, "Session %d attackType set to %d\n", i, static_cast<int>(player._attackType));
 
 				// Broadcast SC_ATTACK1 
 				PacketSCAttack1 out = {};
@@ -565,89 +583,77 @@ void Network::Manager::ProcessRecvData() noexcept {
 				HandleDisconnection(i);
 			} break;
 			}
-
-
 		}
 	}
 }
 
 void Network::Manager::UpdateMove() noexcept {
-	// Game logic update can be implemented here 
 	for (int i = 0; i < SESSION_MAX; ++i) {
 		Game::Player& player = _players[i];
-		if (player._isAlive == false) continue; 
-		if(player._isMoving) {
-			// Update player position based on direction 
+		if (player._isAlive == false) continue;
+		if (player._isMoving) {
+			int oldX = player._x;
+			int oldY = player._y;
+
 			switch (player._direction) {
 			case Game::MOVE_DIR_LL:
 				player._x -= Game::X_MOVE_PER_FRAME;
-				if (player._x < Game::RANGE_MOVE_LEFT) 
-					player._x = Game::RANGE_MOVE_LEFT;
 				break;
 			case Game::MOVE_DIR_LU:
 				player._x -= Game::X_MOVE_PER_FRAME;
 				player._y -= Game::Y_MOVE_PER_FRAME;
-				if (player._x < Game::RANGE_MOVE_LEFT)
-					player._x = Game::RANGE_MOVE_LEFT;
-				if (player._y < Game::RANGE_MOVE_TOP)
-					player._y = Game::RANGE_MOVE_TOP;
 				break;
 			case Game::MOVE_DIR_UU:
 				player._y -= Game::Y_MOVE_PER_FRAME;
-				if (player._y < Game::RANGE_MOVE_TOP)
-					player._y = Game::RANGE_MOVE_TOP;
 				break;
 			case Game::MOVE_DIR_RU:
 				player._x += Game::X_MOVE_PER_FRAME;
 				player._y -= Game::Y_MOVE_PER_FRAME;
-				if (player._x > Game::RANGE_MOVE_RIGHT)
-					player._x = Game::RANGE_MOVE_RIGHT;
-				if (player._y < Game::RANGE_MOVE_TOP)
-					player._y = Game::RANGE_MOVE_TOP;
 				break;
 			case Game::MOVE_DIR_RR:
 				player._x += Game::X_MOVE_PER_FRAME;
-				if (player._x > Game::RANGE_MOVE_RIGHT)
-					player._x = Game::RANGE_MOVE_RIGHT;
 				break;
 			case Game::MOVE_DIR_RD:
 				player._x += Game::X_MOVE_PER_FRAME;
 				player._y += Game::Y_MOVE_PER_FRAME;
-				if (player._x > Game::RANGE_MOVE_RIGHT)
-					player._x = Game::RANGE_MOVE_RIGHT;
-				if (player._y > Game::RANGE_MOVE_BOTTOM)
-					player._y = Game::RANGE_MOVE_BOTTOM;
 				break;
 			case Game::MOVE_DIR_DD:
 				player._y += Game::Y_MOVE_PER_FRAME;
-				if (player._y > Game::RANGE_MOVE_BOTTOM)
-					player._y = Game::RANGE_MOVE_BOTTOM;
 				break;
 			case Game::MOVE_DIR_LD:
 				player._x -= Game::X_MOVE_PER_FRAME;
-				player._y += Game::Y_MOVE_PER_FRAME; 
-				if (player._x < Game::RANGE_MOVE_LEFT)
-					player._x = Game::RANGE_MOVE_LEFT;
-				if (player._y > Game::RANGE_MOVE_BOTTOM)
-					player._y = Game::RANGE_MOVE_BOTTOM;
+				player._y += Game::Y_MOVE_PER_FRAME;
 				break;
 			default:
 				break;
 			}
-			fprintf_s(stdout, "Player %d moved to (%d, %d)\n", i, player._x, player._y); 
+
+			bool outOfBounds =
+				player._x < Game::RANGE_MOVE_LEFT ||
+				player._x > Game::RANGE_MOVE_RIGHT ||
+				player._y < Game::RANGE_MOVE_TOP ||
+				player._y > Game::RANGE_MOVE_BOTTOM;
+
+			if (outOfBounds) {
+				player._x = oldX;
+				player._y = oldY;
+			}
+			else {
+				fprintf_s(stdout, "Player %d moved to (%d, %d)\n", i, player._x, player._y);
+			}
 		}
 	}
 }
+
 
 void Network::Manager::UpdateAttack() noexcept {
 	// Game logic update can be implemented here 
 	for (int i = 0; i < SESSION_MAX; ++i) {
 		Game::Player& player = _players[i];
 		if (player._isAlive == false) continue;
-		if (player._attackType == Game::NO_ATTACK) continue; 
+		if (player._attackType == Game::NO_ATTACK) continue;
 
 		Game::AttackType currentAttackType = player._attackType;
-		player._attackType = Game::NO_ATTACK; // Reset attack type after processing 
 
 		int attackRange = 60; // Example attack range 
 		switch (currentAttackType) {
@@ -655,6 +661,9 @@ void Network::Manager::UpdateAttack() noexcept {
 			case Game::ATTACK2: attackRange = 80; break;
 			case Game::ATTACK3: attackRange = 100; break;
 		}
+
+		fprintf_s(stdout, "Player %d performed attack type %d with range %d\n", 
+			i, static_cast<int>(currentAttackType), attackRange);
 
 		for (int j = 0; j < SESSION_MAX; ++j) {
 			if (j == i) continue;
@@ -680,15 +689,19 @@ void Network::Manager::UpdateAttack() noexcept {
 
 			packetSCDamage.payload.attackID = i;
 			packetSCDamage.payload.targetID = j;
-			packetSCDamage.payload.remainingHP = static_cast<uint8_t>(player._hp); 
-			other.sendBuffer.Enqueue(
-				reinterpret_cast<const char*>(&packetSCDamage),
-				sizeof(PacketSCDamage)
-			);
+			packetSCDamage.payload.remainingHP = static_cast<uint8_t>(_players[j]._hp);
+			
+			for (int k = 0; k < SESSION_MAX; ++k) {
+				Session& broadcastSession = _sessions[k];
+				if (broadcastSession.socket == INVALID_SOCKET) continue;
+				broadcastSession.sendBuffer.Enqueue(
+					reinterpret_cast<const char*>(&packetSCDamage),
+					sizeof(PacketSCDamage)
+				);
+			} // All sessions broadcast, including attacker and target 
 		}
-
-		
-	}	
+		player._attackType = Game::NO_ATTACK; // Reset attack type after processing 
+	} // end of for loop 	
 }
 
 
