@@ -272,8 +272,6 @@ void Net::Manager::HandleDisconnection(int sessionIndex) noexcept {
 	sessionToClose.sendBuffer.ClearBuffer();
 	UpdateMaxSocketAfterDisconnection(socketToClose);
 	
-	UpdateMaxSocketAfterDisconnection(sessionToClose.socket); 
-
 	Game::Manager& gameManager = Game::Manager::GetInstance();
 	gameManager.DisconnectPlayer(sessionIndex);
 	PacketSCDeleteCharacter packetSCDeleteCharacter = {};

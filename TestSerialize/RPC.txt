@@ -1,0 +1,10 @@
+
+
+CREATE_MY_CHARACTERISTIC
+{
+	int : id; 
+	char : dir;
+	short : x;
+	short : y;
+	char : hp; 
+}

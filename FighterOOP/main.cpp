@@ -6,10 +6,10 @@ class Engine {
 private:
 	LARGE_INTEGER _frequency;
 	LARGE_INTEGER _time_init;
-	volatile bool _running = false;
-	volatile int _frameCount = 0;
-	volatile int _FPS_curr = 0;
-	volatile int _FPS_prev = 0;
+	bool _running = false;
+	int _frameCount = 0;
+	int _FPS_curr = 0;
+	int _FPS_prev = 0;
 	inline long long GetFrequency() const noexcept {
 		return _frequency.QuadPart;
 	}
