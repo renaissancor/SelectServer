@@ -4,12 +4,11 @@
 // Goal is to implement RPC (Remote Procedure Call) mechanism later 
 
 class Packet {
-	static constexpr const int BUFFER_CAPACITY = 256; // 2^8, uint8_t size, specified in header 
-
+	static constexpr const int BUFFER_CAPACITY = 256 - sizeof(int) * 2; // 2^8, uint8_t size, specified in header 
 private:
-	char _buffer[BUFFER_CAPACITY];
 	int _head = 0;
 	int _tail = 0;
+	char _buffer[BUFFER_CAPACITY];
 
 public:
 	Packet() = default;

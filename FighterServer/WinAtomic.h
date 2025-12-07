@@ -46,7 +46,7 @@ public:
 };
 
 template<>
-class WinAtomic<long long> {
+class WinAtomic<long long> {    
 private:
     alignas(64) volatile LONGLONG _value;
 

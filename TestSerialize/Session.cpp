@@ -2,6 +2,7 @@
 
 #include "Session.h"
 #include "Logic.h"
+#include "Network.h"
 
 // Session.cpp 
 
@@ -22,30 +23,31 @@ void Session::Receive() noexcept // recv to Game L7
 		}
 		// compute total packet size and validate it
 		size_t payloadSize = static_cast<size_t>(packetHeader.size);
-		size_t totalBytes = sizeof(PacketHeader) + payloadSize;
+		size_t packetSize = sizeof(PacketHeader) + payloadSize;
 
-		if (payloadSize == 0 || totalBytes > 256) {
+		if (payloadSize == 0 || packetSize > 256) {
 			fprintf(stderr, "Malformed packet detected (size=%zu) from session %d\n", payloadSize, _index);
-			Close();
+			Network::GetInstance().DisconnectSession(_index);
 			return;
 		}
 
-		if (recvBuffer.GetUsedSize() < totalBytes) {
+		if (recvBuffer.GetUsedSize() < packetSize) {
 			return; // Not enough data for full packet 
 		}
 		
-		Packet packet = {}; 
+		Packet* packet = new Packet(); 
 		size_t deqBytes = recvBuffer.Dequeue(
-			packet.GetBuffer(),
-			totalBytes
+			packet->GetBuffer(),
+			packetSize
 		);
 
-		if (deqBytes < totalBytes) {
-			fprintf(stderr, "Dequeue error: expected %zu got %zu\n", totalBytes, deqBytes);
+		if (deqBytes < packetSize) {
+			fprintf(stderr, "Dequeue error: expected %zu got %zu\n", packetSize, deqBytes);
+			delete packet; 
 			Close(); 
 			return; // should NOT happen, malfunctioned dequeue 
 		}
-		packet.SetUsedSize(totalBytes); 
+		packet->SetUsedSize(packetSize);
 		logic.EnqueuePacket(_index, packet); 
 	}
 }
@@ -108,7 +110,7 @@ void Session::RecvTCP() noexcept {
 		}
 		else {
 			_wsaError = errorCode;
-			Close();
+			Network::GetInstance().DisconnectSession(_index);
 		}
 		return;
 	}
@@ -116,7 +118,7 @@ void Session::RecvTCP() noexcept {
 	if (recvBytes == 0) {
 		// peer closed connection
 		_wsaError = 0;
-		Close();
+		Network::GetInstance().DisconnectSession(_index);
 		return;
 	}
 }

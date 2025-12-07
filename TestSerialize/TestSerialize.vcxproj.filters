@@ -30,7 +30,7 @@
     <ClInclude Include="RingBuffer.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="RPC.h">
+    <ClInclude Include="Handler.h">
       <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="Network.h">
@@ -60,6 +60,9 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Packet.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Handler.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>

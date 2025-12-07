@@ -37,6 +37,8 @@ public:
 	inline const uint8_t GetSize() const noexcept { return static_cast<uint8_t>(_buffer[1]); }
 	inline const Type GetType() const noexcept { return static_cast<Type>(_buffer[2]); }
 
+	inline void SkipHeader() noexcept { _head = sizeof(PacketHeader); } 
+
 	template<typename T>
 	inline void Put(const T& val) noexcept {
 		size_t pos = _tail;

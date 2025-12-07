@@ -4,6 +4,7 @@
 
 class Session {
 private:
+	bool _closed = true; 
 	int _index = -1; 
 	SOCKET _socket = INVALID_SOCKET; 
 	sockaddr _sockaddr = { 0 }; 
@@ -13,7 +14,7 @@ private:
 
 public:
 	inline SOCKET GetSocket() const noexcept { return _socket; }
-	inline void SetSocket(SOCKET socket) noexcept { _socket = socket; }
+	inline void SetSocket(SOCKET socket) noexcept {  _socket = socket; }
 	inline const sockaddr& GetSockAddr() const noexcept { return _sockaddr; }
 	inline void SetSockAddr(const sockaddr& addr) noexcept { _sockaddr = addr; }
 	inline RingBuffer& GetRecvBuffer() noexcept { return _recvBuffer; }

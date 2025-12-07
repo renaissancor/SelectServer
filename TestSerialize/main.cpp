@@ -11,7 +11,7 @@ int main() {
 		return -1;
 	}
 	network.RunEngine();
-
+	network.Shutdown(); 
 
 	return 0;
 }

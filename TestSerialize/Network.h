@@ -39,14 +39,18 @@ public:
 	}
 
 	inline Session& GetSession(int index) noexcept { return _sessions[index % SESSION_MAX]; }
+	inline void UpdateMaxSocketAfterConnection(SOCKET newSocket) noexcept {
+		if (newSocket > _hMaxSocket) _hMaxSocket = newSocket;
+	}
+	void UpdateMaxSocketAfterDisconnection(SOCKET disconnectedSocket) noexcept;
+	int GetNewSessionIndex() noexcept;
 
 public:
 	void BroadcastExcept(int excludeSessionIndex, const char* data, int size) noexcept;
 	void Unicast(int sessionIndex, const char* data, int size) noexcept;
 	bool Initialize() noexcept;
-	int AcceptConnections() noexcept;
-	void UpdateMaxSocketAfterConnection(SOCKET newSocket) noexcept;
-	void UpdateMaxSocketAfterDisconnection(SOCKET disconnectedSocket) noexcept;
+	int AcceptConnections() noexcept; 
+	void DisconnectSession(int sessionIndex) noexcept; 
 	void Flush(int sessionIndex) noexcept;
 	void RecvFromTCP(int sessionIndex) noexcept;
 	void ProcessReceivedData(int sessionIndex) noexcept;

@@ -34,16 +34,16 @@ enum class Type : uint8_t
     SC_SYNC = 251,
 };
 
-enum class Dir : uint8_t
-{
-    LL = 0,
-    LU = 1,
-    UU = 2,
-    RU = 3,
-    RR = 4,
-    RD = 5,
-    DD = 6,
-    LD = 7,
+enum Direction : uint8_t {
+    MOVE_DIR_LL = 0,
+    MOVE_DIR_LU = 1,
+    MOVE_DIR_UU = 2,
+    MOVE_DIR_RU = 3,
+    MOVE_DIR_RR = 4,
+    MOVE_DIR_RD = 5,
+    MOVE_DIR_DD = 6,
+    MOVE_DIR_LD = 7,
+    STOP = 8,
 };
 
 struct PacketHeader
