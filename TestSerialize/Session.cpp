@@ -3,6 +3,7 @@
 #include "Session.h"
 #include "Logic.h"
 #include "Network.h"
+#include "Express.h"
 
 // Session.cpp 
 
@@ -10,6 +11,7 @@ void Session::Receive() noexcept // recv to Game L7
 {
 	RingBuffer& recvBuffer = _recvBuffer; 
 	Logic& logic = Logic::GetInstance(); 
+	Express& express = Express::GetInstance(); 
 
 	for(;;) {
 		PacketHeader packetHeader = {};
@@ -48,7 +50,7 @@ void Session::Receive() noexcept // recv to Game L7
 			return; // should NOT happen, malfunctioned dequeue 
 		}
 		packet->SetUsedSize(packetSize);
-		logic.EnqueuePacket(_index, packet); 
+		express.EnqueueRecvPacket(this->_index, packet); 
 	}
 }
 

@@ -1,0 +1,230 @@
+{
+  "config": {
+    "header_code": "0x89"
+  },
+  "types": {
+    "uint8_t": 1,
+    "uint16_t": 2,
+    "uint32_t": 4
+  },
+  "packets": [
+    {
+      "name": "SC_CREATE_MY_CHARACTER",
+      "type": 0,
+      "send": "Unicast",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        },
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        },
+        {
+          "name": "hp",
+          "type": "uint8_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_CREATE_OTHER_CHARACTER",
+      "type": 1,
+      "send": "Unicast",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        },
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        },
+        {
+          "name": "hp",
+          "type": "uint8_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_DELETE_CHARACTER",
+      "type": 2,
+      "send": "BroadcastExcept",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_MOVE_START",
+      "type": 11,
+      "send": "BroadcastExcept",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        },
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_MOVE_STOP",
+      "type": 13,
+      "send": "BroadcastExcept",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        },
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_ATTACK1",
+      "type": 21,
+      "send": "BroadcastExcept",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        },
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_ATTACK2",
+      "type": 23,
+      "send": "BroadcastExcept",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        },
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_ATTACK3",
+      "type": 25,
+      "send": "BroadcastExcept",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        },
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_DAMAGE",
+      "type": 30,
+      "send": "Broadcast",
+      "fields": [
+        {
+          "name": "attackerID",
+          "type": "uint32_t"
+        },
+        {
+          "name": "targetID",
+          "type": "uint32_t"
+        },
+        {
+          "name": "hp",
+          "type": "uint8_t"
+        }
+      ]
+    },
+    {
+      "name": "SC_SYNC",
+      "type": 251,
+      "send": "Unicast",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uint32_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    }
+  ]
+}

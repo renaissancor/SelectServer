@@ -38,6 +38,14 @@ public:
 		_hp = 100;
 	}
 
+	inline bool IsAlive() const noexcept { return _isAlive; } 
+	inline bool IsMoving() const noexcept { return _isMoving; } 
+	inline short GetX() const noexcept { return _x; }
+	inline short GetY() const noexcept { return _y; }
+	inline Direction GetDir() const noexcept { return _dir; }
+	inline int GetHP() const noexcept { return _hp; } 
+	inline void SetPosition(short x, short y) noexcept { _x = x; _y = y; } 
+
 	inline void Destroy() noexcept {
 		_isAlive = false;
 	}
@@ -86,14 +94,18 @@ struct PacketEvent {
 class Logic { // Layer 7 Game Logic 
 private:
 	constexpr static size_t MAX_PLAYERS = 64; 
-	std::queue<PacketEvent> _packetEvents;
 
 	Player _players[MAX_PLAYERS]; 
 
 public:
-	void ProcessPacket(const int sessionIndex, Packet *packet) noexcept;
 	void OnPlayerConnected(int sessionIndex) noexcept; 
 	void OnPlayerDisconnected(int sessionIndex) noexcept; 
+
+	void OnMoveStart(int sessionIndex, uint8_t dir, uint16_t x, uint16_t y) noexcept;
+	void OnMoveStop(int sessionIndex, uint8_t dir, uint16_t x, uint16_t y) noexcept;
+	void OnAttack1(int sessionIndex, uint8_t dir, uint16_t x, uint16_t y) noexcept;
+	void OnAttack2(int sessionIndex, uint8_t dir, uint16_t x, uint16_t y) noexcept;
+	void OnAttack3(int sessionIndex, uint8_t dir, uint16_t x, uint16_t y) noexcept;
 
 	static Logic& GetInstance() noexcept {
 		static Logic instance;
@@ -101,17 +113,6 @@ public:
 	}
 
 	inline Player& GetPlayer(size_t index) noexcept { return _players[index]; }
-	
-	inline void EnqueuePacket(const int sessionIndex, Packet *packet) noexcept {
-		_packetEvents.push({sessionIndex, packet});
-	}
 
-
-	void ProcessPackets() noexcept {
-		while (!_packetEvents.empty()) {
-			PacketEvent ev = _packetEvents.front();
-			_packetEvents.pop();
-			ProcessPacket(ev.sessionIndex, ev.packet);
-		}
-	}
+	void Update() noexcept; 
 }; 

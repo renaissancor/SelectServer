@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Session.h"
 #include "Network.h"
+#include "Express.h" 
 #include "Logic.h" 
 
 // Network.cpp 
@@ -48,40 +49,74 @@ void Network::BuildFDSets() noexcept {
 	}
 }
 
-void Network::RunEngine() noexcept {
-	Logic& logic = Logic::GetInstance(); 
-	for(;;) {
-		BuildFDSets(); 
-		fd_set rdSet = _readSet;
-		fd_set wrSet = _writeSet; 
-		int n = ::select(0, &rdSet, &wrSet, nullptr, nullptr);
+void Network::Poll() noexcept {
+	fd_set rdSet = _readSet;
+	fd_set wrSet = _writeSet;
 
-		if (FD_ISSET(_hListenSocket, &rdSet)) {
-			AcceptConnections(); // accept as many as possible (non-blocking)
-		}
-		
-		for (int i = 0; i < SESSION_MAX; ++i) {
-			Session& session = _sessions[i];
-			SOCKET socket = session.GetSocket();
-			if (socket == INVALID_SOCKET) continue;
-			if(FD_ISSET(session.GetSocket(), &rdSet)) {
-				session.RecvTCP();
-				session.Receive(); 
-			}
-		} 
+	timeval timeout = { 0, 0 };
+	int n = ::select(0, &rdSet, &wrSet, nullptr, &timeout);
 
-		// Update Game Logic Here 
-		logic.ProcessPackets(); 
+	if (n == SOCKET_ERROR) return;
 
-		for (int i = 0; i < SESSION_MAX; ++i) {
-			Session& session = _sessions[i];
-			SOCKET s = session.GetSocket();
-			if (s == INVALID_SOCKET) continue;
-			if (FD_ISSET(s, &wrSet)) {
-				session.SendTCP();
-			}
+	if (FD_ISSET(_hListenSocket, &rdSet)) {
+		AcceptConnections();
+	}
+
+	for (int i = 0; i < SESSION_MAX; ++i) {
+		Session& session = _sessions[i];
+		if (session.GetSocket() == INVALID_SOCKET) continue;
+
+		if (FD_ISSET(session.GetSocket(), &rdSet)) {
+			session.RecvTCP();
+			session.Receive();
 		}
 	}
+}
+
+void Network::FlushAll() noexcept {
+	for (int i = 0; i < SESSION_MAX; ++i) {
+		Session& session = _sessions[i];
+		if (session.GetSocket() == INVALID_SOCKET) continue;
+		if (!session.GetSendBuffer().IsEmpty()) {
+			session.SendTCP();
+		}
+	}
+}
+
+void Network::RunEngine() noexcept {
+
+	Logic& logic = Logic::GetInstance(); 
+	Express& express = Express::GetInstance();
+
+	LARGE_INTEGER freq, start, now;
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&start);
+	const long long ticksPerFrame = freq.QuadPart / 60;
+	int frameCount = 0;
+
+	timeBeginPeriod(1); 
+	for(;;) {
+		QueryPerformanceCounter(&now);
+		long long targetTick = start.QuadPart + (frameCount * freq.QuadPart) / 60;
+
+		BuildFDSets(); 
+		Poll(); 
+
+		express.ProcessRecvPackets(); 
+		logic.Update(); 
+
+		// Flush outgoing packets
+		FlushAll(); 
+
+		QueryPerformanceCounter(&now);
+		if (now.QuadPart < targetTick) {
+			long long sleepTicks = targetTick - now.QuadPart;
+			DWORD sleepMs = (DWORD)(sleepTicks * 1000 / freq.QuadPart);
+			if (sleepMs > 0) Sleep(sleepMs);
+		}
+
+	} // Game Loop 
+	timeEndPeriod(1);
 }
 
 void Network::Shutdown() noexcept {

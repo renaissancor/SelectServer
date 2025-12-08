@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="RPCGenerator">
+      <UniqueIdentifier>{3053d112-154e-4d51-8158-ec7cb63b7ef1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Packet.h">
@@ -30,14 +33,20 @@
     <ClInclude Include="RingBuffer.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="Handler.h">
-      <Filter>Header</Filter>
-    </ClInclude>
     <ClInclude Include="Network.h">
       <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="Logic.h">
       <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Express.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Stub.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Proxy_gen.h">
+      <Filter>RPCGenerator</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -62,11 +71,26 @@
     <ClCompile Include="Packet.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Handler.cpp">
+    <ClCompile Include="Express.cpp">
       <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Stub.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Proxy_gen.cpp">
+      <Filter>RPCGenerator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="RPC.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RPC.md" />
+    <None Include="packets.json">
+      <Filter>RPCGenerator</Filter>
+    </None>
+    <None Include="proxy_gen.py">
+      <Filter>RPCGenerator</Filter>
+    </None>
   </ItemGroup>
 </Project>

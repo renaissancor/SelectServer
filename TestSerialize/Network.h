@@ -58,6 +58,7 @@ public:
 
 	void BuildFDSets() noexcept;
 	void Poll() noexcept;
+	void FlushAll() noexcept; 
 
 	void RunEngine() noexcept; 
 	void Shutdown() noexcept; 
