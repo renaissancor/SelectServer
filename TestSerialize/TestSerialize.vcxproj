@@ -81,6 +81,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>python $(ProjectDir)rpc_gen.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -95,6 +98,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>python $(ProjectDir)rpc_gen.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -107,6 +113,9 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>python $(ProjectDir)rpc_gen.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -121,13 +130,16 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PreBuildEvent>
+      <Command>python $(ProjectDir)rpc_gen.py</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Logic.h" />
     <ClInclude Include="Network.h" />
     <ClInclude Include="Packet.h" />
     <ClInclude Include="Protocol.h" />
-    <ClInclude Include="Proxy_gen.h" />
+    <ClInclude Include="Proxy.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="Express.h" />
     <ClInclude Include="Session.h" />
@@ -138,9 +150,8 @@
     <ClCompile Include="Logic.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Network.cpp" />
-    <ClCompile Include="Network2.cpp" />
     <ClCompile Include="Packet.cpp" />
-    <ClCompile Include="Proxy_gen.cpp" />
+    <ClCompile Include="Proxy.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="Express.cpp" />
     <ClCompile Include="Session.cpp" />
@@ -153,6 +164,8 @@
     <None Include="packets.json" />
     <None Include="proxy_gen.py" />
     <None Include="RPC.md" />
+    <None Include="rpc_gen.py" />
+    <None Include="stub_gen.py" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

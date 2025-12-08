@@ -45,7 +45,7 @@
     <ClInclude Include="Stub.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="Proxy_gen.h">
+    <ClInclude Include="Proxy.h">
       <Filter>RPCGenerator</Filter>
     </ClInclude>
   </ItemGroup>
@@ -62,9 +62,6 @@
     <ClCompile Include="Session.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Network2.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="Logic.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -77,7 +74,7 @@
     <ClCompile Include="Stub.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Proxy_gen.cpp">
+    <ClCompile Include="Proxy.cpp">
       <Filter>RPCGenerator</Filter>
     </ClCompile>
   </ItemGroup>
@@ -90,6 +87,12 @@
       <Filter>RPCGenerator</Filter>
     </None>
     <None Include="proxy_gen.py">
+      <Filter>RPCGenerator</Filter>
+    </None>
+    <None Include="stub_gen.py">
+      <Filter>RPCGenerator</Filter>
+    </None>
+    <None Include="rpc_gen.py">
       <Filter>RPCGenerator</Filter>
     </None>
   </ItemGroup>

@@ -1,13 +1,112 @@
 {
   "config": {
-    "header_code": "0x89"
+    "header_code": "0x89",
+    "handler_class": "Logic::GetInstance()",
+    "handler_prefix": "On"
   },
   "types": {
     "uint8_t": 1,
     "uint16_t": 2,
     "uint32_t": 4
   },
-  "packets": [
+  "c2s": [
+    {
+      "name": "CS_MOVE_START",
+      "type": 10,
+      "handler": "MoveStart",
+      "fields": [
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "CS_MOVE_STOP",
+      "type": 12,
+      "handler": "MoveStop",
+      "fields": [
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "CS_ATTACK1",
+      "type": 20,
+      "handler": "Attack1",
+      "fields": [
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "CS_ATTACK2",
+      "type": 22,
+      "handler": "Attack2",
+      "fields": [
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    },
+    {
+      "name": "CS_ATTACK3",
+      "type": 24,
+      "handler": "Attack3",
+      "fields": [
+        {
+          "name": "dir",
+          "type": "uint8_t"
+        },
+        {
+          "name": "x",
+          "type": "uint16_t"
+        },
+        {
+          "name": "y",
+          "type": "uint16_t"
+        }
+      ]
+    }
+  ],
+  "s2c": [
     {
       "name": "SC_CREATE_MY_CHARACTER",
       "type": 0,

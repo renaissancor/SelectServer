@@ -130,7 +130,7 @@ void Logic::Update() noexcept {
 
     // Update Damage 
 
-
+	UpdateAttackDamage(); 
 
     // Update Death 
     for (size_t i = 0; i < MAX_PLAYERS; ++i) {
@@ -143,3 +143,46 @@ void Logic::Update() noexcept {
     }
 }
 
+
+void Logic::UpdateAttackDamage() noexcept {
+
+
+	for (int i = 0; i < MAX_PLAYERS; ++i) {
+		Player& player = _players[i];
+
+		if (player.IsAlive() == false) continue;
+		AtkType atkType = player.GetAtk();
+		if (atkType == AtkType::NO_ATTACK) continue;
+		player.ClearAtk(); // Reset attack type after processing
+
+		int attackRange = 60; // Example attack range 
+		switch (atkType) {
+		case AtkType::ATTACK1: attackRange = 60; break;
+		case AtkType::ATTACK2: attackRange = 80; break;
+		case AtkType::ATTACK3: attackRange = 100; break;
+		}
+
+		fprintf_s(stdout, "Player %d performed attack type %d with range %d\n",
+			i, static_cast<int>(atkType), attackRange);
+
+		for (int j = 0; j < MAX_PLAYERS; ++j) {
+			if (j == i) continue;
+			Player& targetPlayer = _players[j];
+			if (targetPlayer.IsAlive() == false) continue;
+
+			short dx = targetPlayer.GetX() - player.GetX();
+			short dy = targetPlayer.GetY() - player.GetY();
+			int distanceSquared = dx * dx + dy * dy;
+			if (distanceSquared > attackRange * attackRange) continue; // Out of range 
+			bool isInAttackDirection = CheckAttackDirection(player, targetPlayer);
+			if (!isInAttackDirection) continue;
+
+			fprintf_s(stdout, "[DAMAGE]	Player %d attacked Player %d\n", i, j);
+
+			// Apply damage
+			targetPlayer.Damage(5);
+			
+			SendDamage(i, j, static_cast<uint8_t>(targetPlayer.GetHP())); 
+		}
+	}
+}

@@ -43,7 +43,14 @@ public:
 	inline short GetX() const noexcept { return _x; }
 	inline short GetY() const noexcept { return _y; }
 	inline Direction GetDir() const noexcept { return _dir; }
+	inline AtkType GetAtk() const noexcept { return _atk; } 
+	inline void ClearAtk() noexcept { _atk = AtkType::NO_ATTACK; } 
 	inline int GetHP() const noexcept { return _hp; } 
+	inline int Damage(int dmg) noexcept { 
+		_hp -= dmg; 
+		if (_hp < 0) _hp = 0; 
+		return _hp; 
+	}
 	inline void SetPosition(short x, short y) noexcept { _x = x; _y = y; } 
 
 	inline void Destroy() noexcept {
@@ -97,6 +104,31 @@ private:
 
 	Player _players[MAX_PLAYERS]; 
 
+	inline bool CheckAttackDirection(Player &attacker, Player &target) noexcept {
+		short dx = target.GetX() - attacker.GetX();
+		short dy = target.GetY() - attacker.GetY();
+		switch (attacker.GetDir()) {
+		case Direction::MOVE_DIR_LL:
+			return dx < 0;
+		case Direction::MOVE_DIR_LU:
+			return dx < 0 && dy < 0;
+		case Direction::MOVE_DIR_UU:
+			return dy < 0;
+		case Direction::MOVE_DIR_RU:
+			return dx > 0 && dy < 0;
+		case Direction::MOVE_DIR_RR:
+			return dx > 0;
+		case Direction::MOVE_DIR_RD:
+			return dx > 0 && dy > 0;
+		case Direction::MOVE_DIR_DD:
+			return dy > 0;
+		case Direction::MOVE_DIR_LD:
+			return dx < 0 && dy > 0;
+		default:
+			return false;
+		}
+	}
+
 public:
 	void OnPlayerConnected(int sessionIndex) noexcept; 
 	void OnPlayerDisconnected(int sessionIndex) noexcept; 
@@ -115,4 +147,5 @@ public:
 	inline Player& GetPlayer(size_t index) noexcept { return _players[index]; }
 
 	void Update() noexcept; 
+	void UpdateAttackDamage() noexcept; 
 }; 
