@@ -3,7 +3,7 @@
 // ring buffer 
 
 class ring_buffer {
-	constexpr static int DEFAULT_CAPACITY = 4096; 
+	constexpr static int DEFAULT_CAPACITY = 16384; 
 
 private:
 	char* _buffer = nullptr; 
@@ -57,7 +57,7 @@ public:
 	inline char* get_tail_ptr() noexcept { return (_buffer + _tail); }
 
 	// functions 
-	ring_buffer(int capacity) noexcept;
+	ring_buffer(int capacity = DEFAULT_CAPACITY) noexcept;
 	~ring_buffer();
 	ring_buffer(const ring_buffer&) = delete;
 	ring_buffer& operator=(const ring_buffer&) = delete;

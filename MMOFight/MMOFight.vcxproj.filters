@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="WinAPI">
+      <UniqueIdentifier>{30017e46-5aa1-4419-96cd-9020ee8f9ae9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine.cpp">
@@ -34,6 +37,9 @@
     </ClInclude>
     <ClInclude Include="ring_buffer.h">
       <Filter>data_structure</Filter>
+    </ClInclude>
+    <ClInclude Include="WinAtomic.h">
+      <Filter>WinAPI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -131,6 +131,7 @@
     <ClInclude Include="Network.h" />
     <ClInclude Include="ring_buffer.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="WinAtomic.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,22 +1,30 @@
 #pragma once
 
-class Engine {
-private:
-	LARGE_INTEGER _frequency;
-	LARGE_INTEGER _time_init; 
+#include "WinAtomic.h" 
 
-	bool _shutdown = 0; 
+namespace Core {
+	constexpr static const long long FRAME_PER_SECOND = 50;
 
-public:
-	static Engine& GetInstance() noexcept {
-		static Engine instance;
-		return instance;
+	Win::Atomic64 running{ -1 };
+
+	LARGE_INTEGER frequency;
+	LARGE_INTEGER time_init;
+
+	long long update_per_second = 0; 
+	long long select_per_second = 0; 
+	long long cpu_spin_per_second = 0; 
+
+	inline void StopRunning() noexcept { running.Store(0); }
+	inline const long long GetTick() noexcept {
+		LARGE_INTEGER currTime;
+		QueryPerformanceCounter(&currTime);
+		return currTime.QuadPart;
 	}
 
-	Engine(); 
-	~Engine();
 	bool Initialize() noexcept;
 	void Shutdown() noexcept;
 	void Run() noexcept;
-
-};
+	void Update() noexcept;
+	void Control() noexcept; 
+	void Monitor() noexcept; 
+}
