@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
-#include "Engine.h"
-#include "Network.h" 
+#include "Core.h"
+#include "Nets.h" 
+#include "Game.h"
 
 #include <Windows.h>
 #include <immintrin.h>
@@ -37,7 +38,7 @@ void Core::Run() noexcept {
         spin_count_in_sec++;
 
         // --- 1. Network I/O (Busy wait) ---
-        if (Net::Poll()) {
+        if (Nets::Poll()) {
             select_count_in_sec++;
         }
 
@@ -61,20 +62,17 @@ void Core::Run() noexcept {
         }
 
         while (frame_accumulator >= ticks_per_frame) {
-            Update();
+            Game::Update();
             logic_count_in_sec++;
             frame_accumulator -= ticks_per_frame;
         }
 
-        Net::Flush(); 
+        Nets::Flush(); 
         Control();
         Monitor();
 
         _mm_pause(); 
     }
-}
-
-void Core::Update() noexcept {
 }
 
 void Core::Control() noexcept { 

@@ -38,3 +38,6 @@
 
 #pragma comment(lib, "ws2_32.lib") // Winsock Library
 #pragma comment(lib, "winmm.lib")  // TimeBeginPeriod, TimeEndPeriod 
+
+#include "Types.h" 
+

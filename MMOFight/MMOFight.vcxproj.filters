@@ -18,21 +18,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine.cpp">
+    <ClCompile Include="Core.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ring_buffer.cpp">
       <Filter>data_structure</Filter>
+    </ClCompile>
+    <ClCompile Include="Nets.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="Engine.h">
+    <ClInclude Include="Core.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="Network.h">
+    <ClInclude Include="Nets.h">
       <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="ring_buffer.h">
@@ -40,6 +46,12 @@
     </ClInclude>
     <ClInclude Include="WinAtomic.h">
       <Filter>WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Types.h">
+      <Filter>Header</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
