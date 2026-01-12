@@ -25,9 +25,6 @@ namespace Nets {
 
 	
 
-	// functions 
-	int GetAvailableSessionIndex() noexcept; 
-
 	bool Startup() noexcept; 
 	void Cleanup() noexcept; 
 

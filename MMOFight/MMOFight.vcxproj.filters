@@ -53,5 +53,8 @@
     <ClInclude Include="Types.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="Packet.h">
+      <Filter>data_structure</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

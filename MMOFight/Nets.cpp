@@ -62,6 +62,16 @@ bool Nets::Startup() noexcept {
 }
 
 void Nets::Cleanup() noexcept {
+	for (auto& pair : sessions) {
+		Session* session = pair.second; 
+		if (session) {
+			if (session->socket != INVALID_SOCKET) {
+				::closesocket(session->socket);
+				session->socket = INVALID_SOCKET; 
+			}
+			delete session; 
+		}
+	}
 	WSACleanup();
 }
 
@@ -89,8 +99,28 @@ bool Nets::Poll() noexcept {
 	return has_data; 
 }
 
-void Nets::Flush() noexcept {
-	
+void Nets::Flush() noexcept { // Flush SendQ to Network 
+	for (auto& pair : sessions) {
+		Session* session = pair.second; 
+		SOCKET sock = session->socket; 
+		if (sock == INVALID_SOCKET) continue; 
+		if (FD_ISSET(sock, &master_wset)) {
+			// Flush SendQ to Network 
+			int bytes_to_send = session->sendQ.get_used_size(); 
+			if (bytes_to_send <= 0) continue; 
+			int direct_dequeue_size = session->sendQ.direct_dequeue_size(); 
+			if (bytes_to_send > direct_dequeue_size) 
+				bytes_to_send = direct_dequeue_size; 
+			int sent_bytes = ::send(
+				sock,
+				session->sendQ.get_head_ptr(),
+				bytes_to_send,
+				0);
+			if (sent_bytes > 0) {
+				session->sendQ.move_head(sent_bytes);
+			}
+		}
+	}
 }
 
 int Nets::AcceptSessions() noexcept {

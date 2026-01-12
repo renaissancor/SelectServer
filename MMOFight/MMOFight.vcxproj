@@ -132,6 +132,7 @@
     <ClInclude Include="Core.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="Nets.h" />
+    <ClInclude Include="Packet.h" />
     <ClInclude Include="ring_buffer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Types.h" />
