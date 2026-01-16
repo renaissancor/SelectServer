@@ -3,12 +3,14 @@
 #include "Nets.h"
 
 namespace Game {
-	std::map<i32, Player*> players; 
+	std::unordered_map<i32, Player*> players; 
+
+	std::vector<i32> sectors[SECTOR_COUNT_X][SECTOR_COUNT_Y]; 
 }
 
 void Game::Update() noexcept {
 	Player* player = nullptr; 
-	using Iter = std::map<i32, Player*>::iterator; 
+	using Iter = std::unordered_map<i32, Player*>::iterator;
 	for (Iter it = players.begin(); it != players.end(); ) {
 		player = it->second; 
 		++it; 
@@ -55,13 +57,25 @@ void Game::Update() noexcept {
 				player->direction = Direction::MOVE_DIR_LD;
 				break;
 		}
+		// Boundary Check 
+		if (player->x < RANGE_MOVE_LEFT) player->x = RANGE_MOVE_LEFT;
+		if (player->x > RANGE_MOVE_RIGHT) player->x = RANGE_MOVE_RIGHT;
+		if (player->y < RANGE_MOVE_TOP) player->y = RANGE_MOVE_TOP;
+		if (player->y > RANGE_MOVE_BOTTOM) player->y = RANGE_MOVE_BOTTOM; 
 
-		if(player->action >= Action::MOVE_LL && player->action <= Action::MOVE_LD) {
-			// Sector Update 
-
+		// Sector update based on new position 
+		Sector new_sector = GetSector(player->x, player->y); 
+		if (new_sector != player->sector_curr) {
+			// Remove from previous sector 
+			if (player->sector_curr.x >= 0 && player->sector_curr.y >= 0) {
+				std::vector<i32>& prev_sector_players = sectors[player->sector_curr.x][player->sector_curr.y];
+				// TODO: O(N) removal; can be optimized with different data structure if needed 
+				prev_sector_players.erase(std::remove(prev_sector_players.begin(), prev_sector_players.end(), player->sessionID), prev_sector_players.end());
+			}
+			// Add to new sector 
+			sectors[new_sector.x][new_sector.y].push_back(player->sessionID);
+			player->sector_prev = player->sector_curr;
+			player->sector_curr = new_sector;
 		}
-
-
 	}
-
 }

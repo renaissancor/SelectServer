@@ -5,14 +5,13 @@
 namespace Core {
 	constexpr static const long long FRAME_PER_SECOND = 50;
 
-	Win::Atomic64 running{ -1 };
+	extern Win::Atomic64 running;
+	extern LARGE_INTEGER frequency;
+	extern LARGE_INTEGER time_init;
 
-	LARGE_INTEGER frequency;
-	LARGE_INTEGER time_init;
-
-	long long update_per_second = 0; 
-	long long select_per_second = 0; 
-	long long cpu_spin_per_second = 0; 
+	extern long long update_per_second;
+	extern long long select_per_second;
+	extern long long cpu_spin_per_second;
 
 	inline void StopRunning() noexcept { running.Store(0); }
 	inline const long long GetTick() noexcept {

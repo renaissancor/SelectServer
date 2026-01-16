@@ -6,6 +6,18 @@
 #include <Windows.h>
 #include <immintrin.h>
 
+namespace Core {
+    Win::Atomic64 running{ -1 };
+
+    LARGE_INTEGER frequency;
+    LARGE_INTEGER time_init;
+
+    long long update_per_second = 0;
+    long long select_per_second = 0;
+    long long cpu_spin_per_second = 0;
+}
+
+
 bool Core::Initialize() noexcept {
     // SetThreadAffinityMask(GetCurrentThread(), 1);
 	QueryPerformanceFrequency(&frequency);
@@ -37,10 +49,9 @@ void Core::Run() noexcept {
         frame_accumulator += delta_tick;
         spin_count_in_sec++;
 
-        // --- 1. Network I/O (Busy wait) ---
-        if (Nets::Poll()) {
-            select_count_in_sec++;
-        }
+        // --- 1. Network I/O (Busy wait) --- 
+        
+        select_count_in_sec += Nets::Poll(); 
 
         if (tick_curr >= tick_next_sec_plan) {
             update_per_second = logic_count_in_sec;

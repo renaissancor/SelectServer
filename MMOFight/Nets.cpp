@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Nets.h"
+#include "Core.h" 
 
 namespace Nets {
 	WSADATA WSAData;
@@ -9,147 +10,154 @@ namespace Nets {
 	SOCKET listen_socket = INVALID_SOCKET;
 	sockaddr_in server_address = { 0 };
 
-	std::map<SOCKET, Session*> sessions; 
-	
-
-}
-
-bool Nets::Startup() noexcept {
-
-	auto CleanHelper = [&]() noexcept -> bool {
-		WSALastError = WSAGetLastError();
-		::closesocket(listen_socket);
-		::WSACleanup();
-		return false;
-		};
-
-	WSAData = { 0 };
-	const i32 wsa_startup_result = WSAStartup(MAKEWORD(2, 2), &WSAData);
-	if (wsa_startup_result != 0) return false; 
-
-	listen_socket = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); 
-	if (listen_socket == INVALID_SOCKET) {
-		WSALastError = WSAGetLastError();
-		WSACleanup();
-		return false; 
-	}
-
-	int flag = 1;
-	int setsockopt_nagle_result = ::setsockopt(listen_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
-	if (setsockopt_nagle_result == SOCKET_ERROR) return CleanHelper(); 
-
-	u_long non_blocking_mode = 1;
-	int ioctlsocket_result = ::ioctlsocket(listen_socket, FIONBIO, &non_blocking_mode);
-	if (ioctlsocket_result == SOCKET_ERROR) return CleanHelper(); 
-
-	linger so_linger = { 1 , 0 }; // Enable Linger, end by RST 
-	int setsockopt_linger_result = ::setsockopt(listen_socket, SOL_SOCKET,
-		SO_LINGER, (char*)&so_linger, sizeof(so_linger));
-	if (setsockopt_linger_result == SOCKET_ERROR) return CleanHelper();
-
-	server_address.sin_family = AF_INET;
-	server_address.sin_port = htons(SERVER_PORT);
-	server_address.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	int bind_result = ::bind(listen_socket, 
-		(SOCKADDR*)&server_address, sizeof(server_address)); 
-	if (bind_result == SOCKET_ERROR) return CleanHelper();
-
-	int listen_result = ::listen(listen_socket, SOMAXCONN);
-	if (listen_result == SOCKET_ERROR) return CleanHelper(); 
-
-	return true;
+	std::unordered_map<SOCKET, Session*> session_map;
+	std::vector<SOCKET> reserved_close_sockets;
 }
 
 void Nets::Cleanup() noexcept {
-	for (auto& pair : sessions) {
-		Session* session = pair.second; 
-		if (session) {
-			if (session->socket != INVALID_SOCKET) {
-				::closesocket(session->socket);
-				session->socket = INVALID_SOCKET; 
-			}
-			delete session; 
+	for (auto& pair : session_map) {
+		if (pair.second) {
+			::closesocket(pair.second->socket);
+			delete pair.second;
 		}
 	}
+	session_map.clear();
+	::closesocket(listen_socket); 
 	WSACleanup();
 }
 
-bool Nets::Poll() noexcept {
-	
-	bool has_data = false; 
+int Nets::Poll() noexcept {
+	const timeval timeout = { 0, 0 };
+	i32 total_events = 0;
 
 	FD_ZERO(&master_rset);
-	FD_ZERO(&master_wset); 
-
 	FD_SET(listen_socket, &master_rset);
-	timeval timeout = { 0, 0 }; // zero timeout for non-blocking select
-	i32 select_result = ::select(0, &master_rset, &master_wset, nullptr, &timeout);
-	if (select_result == SOCKET_ERROR) WSALastError = WSAGetLastError();
-	if (select_result > 0) {
-		has_data = true;
-		if(FD_ISSET(listen_socket, &master_rset)) {
-			AcceptSessions(); 
+	if (::select(0, &master_rset, nullptr, nullptr, &timeout) > 0) {
+		AcceptSessions();
+	}
+
+	auto it = session_map.begin();
+	while (it != session_map.end()) {
+		FD_ZERO(&master_rset);
+
+		Session* batch[FD_SETSIZE];
+		int batch_count = 0;
+
+		for (; it != session_map.end() && batch_count < FD_SETSIZE; ++it) {
+			batch[batch_count++] = it->second;
+			FD_SET(it->second->socket, &master_rset);
+		}
+
+		int select_result = ::select(0, &master_rset, nullptr, nullptr, &timeout);
+
+		if (select_result > 0) {
+			int events_to_process = select_result;
+			total_events += select_result;
+
+			for (int i = 0; i < batch_count && events_to_process > 0; ++i) {
+				if (FD_ISSET(batch[i]->socket, &master_rset)) {
+					events_to_process--;
+
+					Session* s = batch[i];
+					int free_size = s->recvQ.get_free_size();
+					if (free_size <= 0) {
+						reserved_close_sockets.push_back(s->socket);
+						continue;
+					}
+
+					int bytes_to_recv = (free_size < s->recvQ.direct_enqueue_size()) ? free_size : s->recvQ.direct_enqueue_size();
+					int received = ::recv(s->socket, (char*)s->recvQ.get_tail_ptr(), bytes_to_recv, 0);
+
+					if (received > 0) {
+						s->recvQ.move_tail(received);
+						s->last_recv_time = Core::GetTick();
+					}
+					else if (received == 0) {
+						reserved_close_sockets.push_back(s->socket);
+					}
+					else {
+						int wsa_error = WSAGetLastError();
+						if (wsa_error != WSAEWOULDBLOCK) {
+							reserved_close_sockets.push_back(s->socket);
+						}
+					}
+				}
+			}
+		}
+	}
+	return total_events;
+}
+
+void Nets::Flush() noexcept {
+	for (auto &it : session_map)  { 
+		SOCKET sock = it.first;
+		Session* s = it.second; 
+		int used = s->sendQ.get_used_size();
+		if (used <= 0) continue;
+
+		int bytes_to_send = (used < s->sendQ.direct_dequeue_size()) ? used : s->sendQ.direct_dequeue_size();
+		int sent = ::send(sock, (const char*)s->sendQ.get_head_ptr(), bytes_to_send, 0);
+
+		if (sent > 0) {
+			s->sendQ.move_head(sent);
+		}
+		else if (sent < 0) {
+			int wsa_error = WSAGetLastError();
+			if (wsa_error != WSAEWOULDBLOCK) {
+				reserved_close_sockets.push_back(sock);
+			}
 		}
 	}
 
-	i32 count_isset = 0;
-	i32 index_start = 0;
+	if (!reserved_close_sockets.empty()) {
+		std::sort(reserved_close_sockets.begin(), reserved_close_sockets.end());
+		reserved_close_sockets.erase(std::unique(reserved_close_sockets.begin(), reserved_close_sockets.end()), reserved_close_sockets.end());
 
-	return has_data; 
-}
-
-void Nets::Flush() noexcept { // Flush SendQ to Network 
-	for (auto& pair : sessions) {
-		Session* session = pair.second; 
-		SOCKET sock = session->socket; 
-		if (sock == INVALID_SOCKET) continue; 
-		if (FD_ISSET(sock, &master_wset)) {
-			// Flush SendQ to Network 
-			int bytes_to_send = session->sendQ.get_used_size(); 
-			if (bytes_to_send <= 0) continue; 
-			int direct_dequeue_size = session->sendQ.direct_dequeue_size(); 
-			if (bytes_to_send > direct_dequeue_size) 
-				bytes_to_send = direct_dequeue_size; 
-			int sent_bytes = ::send(
-				sock,
-				session->sendQ.get_head_ptr(),
-				bytes_to_send,
-				0);
-			if (sent_bytes > 0) {
-				session->sendQ.move_head(sent_bytes);
-			}
+		for (SOCKET sock : reserved_close_sockets) {
+			DisconnectSession(sock);
 		}
+		reserved_close_sockets.clear();
 	}
 }
 
 int Nets::AcceptSessions() noexcept {
-	int accept_count = 0; 
+	int accept_count = 0;
 	for (;;) {
-		sockaddr client_address = { 0 };
+		sockaddr_in client_address = { 0 };
 		int client_address_len = sizeof(client_address);
-		SOCKET new_socket = ::accept(listen_socket, &client_address, &client_address_len); 
+		SOCKET new_socket = ::accept(listen_socket, (SOCKADDR*)&client_address, &client_address_len);
 
 		if (new_socket == INVALID_SOCKET) {
 			int wsa_error = WSAGetLastError();
-			if (wsa_error != WSAEWOULDBLOCK) WSALastError = wsa_error;
-			return accept_count;
+			if (wsa_error == WSAEWOULDBLOCK) return accept_count;
+			return -1;
 		}
 
-		linger so_linger = { 1 , 0 }; // Close by RST 
+		linger so_linger = { 1 , 0 };
 		::setsockopt(new_socket, SOL_SOCKET, SO_LINGER, (char*)&so_linger, sizeof(so_linger));
-
 		u_long non_blocking_mode = 1;
 		::ioctlsocket(new_socket, FIONBIO, &non_blocking_mode);
 		int flag = 1;
 		::setsockopt(new_socket, IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
-		
+
 		Session* session = new Session();
 		session->socket = new_socket;
-		sessions.insert(std::make_pair(new_socket, session)); 
+		session->last_recv_time = Core::GetTick();
 
-		accept_count++; 
+		session_map[new_socket] = session;
 
-		// Register New Player Create Event 
+		accept_count++;
 	}
+}
+
+void Nets::DisconnectSession(SOCKET sock) noexcept {
+	auto it = session_map.find(sock);
+	if (it == session_map.end()) return;
+
+	Session* session = it->second;
+	if (session) {
+		::closesocket(session->socket);
+		delete session;
+	}
+	session_map.erase(it);
 }
