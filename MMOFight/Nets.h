@@ -5,17 +5,19 @@
 
 namespace Nets {
     constexpr static const u_short SERVER_PORT = 20000;
+	constexpr size_t MAX_SESSIONS = 16384;
 
     struct Session {
-        i32 id = -1;
+        size_t id = -1;
         SOCKET socket = INVALID_SOCKET;
         i64 last_recv_time = 0;
         ring_buffer recvQ;
         ring_buffer sendQ;
     };
 
-    extern std::unordered_map<SOCKET, Session*> session_map;
-    extern std::vector<SOCKET> reserved_close_sockets;
+	extern Session* sessions[MAX_SESSIONS]; 
+	extern std::vector<size_t> session_index_freelist;
+	extern std::vector<size_t> session_index_to_close; 
 
     extern WSADATA WSAData;
     extern SOCKET listen_socket;
@@ -30,5 +32,5 @@ namespace Nets {
     int Poll() noexcept;
     void Flush() noexcept;
     int AcceptSessions() noexcept;
-    void DisconnectSession(SOCKET sock) noexcept;
+    void DisconnectSession(size_t idx) noexcept;
 }
