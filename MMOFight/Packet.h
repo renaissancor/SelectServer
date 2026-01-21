@@ -6,7 +6,7 @@
 // Goal is to implement RPC (Remote Procedure Call) mechanism later 
 
 class Packet {
-	static constexpr const i32 BUFFER_CAPACITY = 256;
+	static constexpr const i32 BUFFER_CAPACITY = 64;
 private:
 	i32 _head = 0;
 	i32 _tail = 0;
@@ -18,13 +18,27 @@ public:
 
 	Packet(const Packet& other) = delete;
 	Packet& operator=(const Packet& other) = delete;
-	Packet(Packet&& other) = delete;
-	Packet& operator=(Packet&& other) = delete;
+
+	Packet(Packet&& other) noexcept {
+		_head = other._head;
+		_tail = other._tail;
+		memcpy(_buffer, other._buffer, BUFFER_CAPACITY);
+	}
+
+	Packet& operator=(Packet&& other) noexcept {
+		if (this != &other) {
+			_head = other._head;
+			_tail = other._tail;
+			memcpy(_buffer, other._buffer, BUFFER_CAPACITY);
+		}
+		return *this;
+	}
 
 	inline const i32 GetCapacity() const noexcept { return BUFFER_CAPACITY; }
 	inline i32 GetUsedSize() const noexcept { return _tail - _head; }
 	inline i32 GetFreeSize() const noexcept { return BUFFER_CAPACITY - _tail; }
 	inline void Clear() noexcept { _head = 0; _tail = 0; }
+	inline const i08* GetHeadPtr() const noexcept { return _buffer; } 
 
 	template<typename T>
 	inline void Put(const T& val) noexcept {

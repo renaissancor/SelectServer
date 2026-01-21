@@ -53,8 +53,11 @@
     <ClInclude Include="Core.h">
       <Filter>Server</Filter>
     </ClInclude>
-    <ClInclude Include="Packet.h">
+    <ClInclude Include="packet.h">
       <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="GameInfo.h">
+      <Filter>Server</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

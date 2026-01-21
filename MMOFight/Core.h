@@ -3,7 +3,7 @@
 #include "WinAtomic.h" 
 
 namespace Core {
-	constexpr static const long long FRAME_PER_SECOND = 50;
+	constexpr static const long long FRAME_PER_SECOND = 25;
 
 	extern Win::Atomic64 running;
 	extern LARGE_INTEGER frequency;
